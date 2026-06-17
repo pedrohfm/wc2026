@@ -1,0 +1,10 @@
+# caches & local junk
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+params/skill_cache.json
+
+# secrets — never commit your API key
+.env
+*.key

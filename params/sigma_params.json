@@ -1,0 +1,6 @@
+{
+  "sigma_team": 80.0,
+  "sigma_conf": 56.0,
+  "source": "market-dispersion calibration",
+  "iters": 1500
+}
