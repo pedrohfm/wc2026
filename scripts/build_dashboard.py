@@ -138,7 +138,20 @@ svg{display:block;width:100%}
 .tip{position:absolute;pointer-events:none;background:#0a1124;border:1px solid var(--line);
   border-radius:8px;padding:6px 9px;font-size:12px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:5}
 .grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}
+.grid-2>*{min-width:0}
+.kpis,.grid-2,.card{width:100%}
 @media(max-width:860px){.grid-2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){
+ .wrap{padding:14px}
+ h1{font-size:20px}
+ nav{flex-wrap:wrap;gap:10px}
+ .kpis{grid-template-columns:repeat(2,1fr);gap:8px}
+ .kpi{padding:10px 12px}.kpi .v{font-size:17px}
+ .controls{gap:6px}
+ .controls .seg button{padding:6px 9px;font-size:12px}
+ .card{padding:13px}
+ table{font-size:12px}.tbar{width:64px}th,td{padding:6px 6px}
+}
 .mover{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)}
 .mover:last-child{border-bottom:0}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle}
@@ -156,10 +169,12 @@ td.team,th.team{text-align:left}
 .legend .it{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);cursor:pointer;padding:2px 6px;border-radius:7px}
 .legend .it.dim{opacity:.35}
 .foot{color:var(--mut);font-size:11.5px;margin-top:18px;text-align:center}
-.mkt{display:flex;align-items:center;gap:8px;margin:5px 0}
-.mkt .nm{width:120px;font-size:12.5px}
-.mbar{flex:1;display:flex;gap:4px}
-.mbar .seg2{height:14px;border-radius:4px}
+.mkt{display:flex;align-items:center;gap:10px;margin:7px 0}
+.mkt .nm{width:110px;font-size:12.5px;flex:none}
+.mcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mrow{display:flex;align-items:center;gap:6px}
+.mrow > i{height:9px;border-radius:3px;display:block;min-width:2px}
+.mrow > span{font-size:11px;color:var(--mut);width:34px;flex:none;text-align:right}
 </style></head>
 <body><div class="wrap">
   <div style="display:flex;gap:18px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:16px">
@@ -184,8 +199,8 @@ td.team,th.team{text-align:left}
         <button data-mode="rank">Rank</button>
       </div>
       <label class="lbl">Show</label>
-      <select id="topN"><option value="8">Top 8</option><option value="12">Top 12</option>
-        <option value="16">Top 16</option><option value="24">Top 24</option></select>
+      <select id="topN"><option value="8">Top 8</option><option value="16">Top 16</option>
+        <option value="32">Top 32</option></select>
     </div>
     <div class="chartwrap"><svg id="chart" viewBox="0 0 1000 460" preserveAspectRatio="xMidYMid meet"></svg>
       <div class="tip" id="tip"></div></div>
@@ -335,17 +350,20 @@ function movers(){
 }
 
 /* ---------- market ---------- */
+const MODEL_C="#5b8cff", MARKET_C="#f59e0b";
 function market(){
   const mk=DATA.market||{}; const el=document.getElementById("market");
   if(!Object.keys(mk).length){ el.innerHTML=`<div class="sub">No odds yet. Add data/odds_champion.csv and rerun.</div>`; return; }
   const teams=rankedTeams().slice(0,10);
-  const mx=Math.max(...teams.map(t=>Math.max(latest(t), mk[t]||0)));
-  el.innerHTML=teams.map(t=>{const m=mk[t]||0,p=latest(t);
-    return `<div class="mkt"><div class="nm">${t}</div><div class="mbar">
-       <div class="seg2" style="width:${(p/mx*100).toFixed(0)}%;background:var(--accent)" title="model ${p.toFixed(1)}%"></div>
-       <div class="seg2" style="width:${(m/mx*100).toFixed(0)}%;background:#64748b" title="market ${m.toFixed(1)}%"></div>
-     </div><div class="sub" style="width:96px;text-align:right">${p.toFixed(1)} / ${m.toFixed(1)}</div></div>`;}).join("")
-    +`<div class="sub" style="margin-top:6px"><span style="color:var(--accent)">■</span> model &nbsp; <span style="color:#64748b">■</span> market</div>`;
+  const mx=Math.max(...teams.map(t=>Math.max(latest(t)||0, mk[t]||0)))||1;
+  el.innerHTML=teams.map(t=>{const m=mk[t]||0,p=latest(t)||0;
+    return `<div class="mkt"><div class="nm">${t}</div><div class="mcol">
+       <div class="mrow"><i style="width:${(p/mx*100).toFixed(1)}%;background:${MODEL_C}"></i><span>${p.toFixed(1)}</span></div>
+       <div class="mrow"><i style="width:${(m/mx*100).toFixed(1)}%;background:${MARKET_C}"></i><span>${m.toFixed(1)}</span></div>
+     </div></div>`;}).join("")
+    +`<div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--mut)">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${MODEL_C};vertical-align:middle;margin-right:5px"></span>model</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${MARKET_C};vertical-align:middle;margin-right:5px"></span>market</span></div>`;
 }
 
 /* ---------- table ---------- */
