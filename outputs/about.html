@@ -24,100 +24,118 @@ td.l,th.l{text-align:left}
  <a href="index.html">Tracker</a>
  <a href="about.html" class="on">Methodology</a></nav>
 
-<h1>About this model</h1>
-<p class="mut">A transparent, calibrated probabilistic forecast of the 2026 FIFA World Cup — what it does,
-the data behind it, the methods, and exactly how good (and how limited) it is.</p>
+<div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">FIFA World Cup 2026 · Quantitative forecast</div>
+<h1>Methodology &amp; disclosure</h1>
+<p class="mut">A documented, out-of-sample-validated probabilistic model of the 2026 FIFA World Cup. This note
+sets out the data inputs, estimation procedure, validation results, assumptions, and limitations in full, so
+that the construction and the performance of the forecast can be assessed independently.</p>
 
-<div class="box"><b>In one paragraph.</b> Every team carries a single strength rating (Elo). For any match,
-the rating gap is turned into a probability distribution over scorelines by a Dixon–Coles goals model whose
-parameters are <i>estimated from history by maximum likelihood</i>. The full 104-match tournament — group
-stage, the 8 best third-placed teams, and the knockout bracket — is then simulated <b>10,000 times</b> to
-estimate each team's chance of reaching every round and winning. Because the betting market prices
-information the model can't see, the championship estimate is also <b>blended with the de-vigged market</b>.
-The model reports its own out-of-sample accuracy before every run.</div>
+<div class="box"><b>Summary.</b> Each national team is assigned a single latent strength rating (Elo). For a
+given fixture, the rating differential is mapped to a joint distribution over scorelines through a
+bivariate-Poisson (Dixon–Coles) specification whose parameters are estimated by maximum likelihood on
+historical results. The complete 104-match tournament — group stage, qualification of the eight best
+third-placed teams, and the knockout bracket — is evaluated by Monte Carlo simulation over 10,000 paths,
+producing each team's probability of reaching every stage and of winning the tournament. Because regulated
+betting markets aggregate information not available to the model, the championship distribution is
+additionally combined with the de-vigged market through a weighted opinion pool. Out-of-sample performance
+statistics are recomputed and disclosed on every run.</div>
 
-<h2>For everyone: how to read it</h2>
-<p>The numbers are <b>probabilities, not predictions</b>. "Spain 18%" means that across 10,000 simulated
-tournaments Spain won about 1,800 of them — not that Spain will or won't win. In a 48-team knockout even the
-strongest side rarely exceeds ~20%, so the value is in the <i>whole distribution</i> and whether it is
-<b>well-calibrated</b>: when the model says 20%, that should happen about 20% of the time. It does (see tests
-below). Day-to-day wiggles of a few tenths of a percent are simulation noise, not news.</p>
+<h2>Interpreting the output</h2>
+<p>All figures are probabilities, not point predictions. A value of 18% for a given team denotes that the
+team prevailed in approximately 18% of simulated tournaments; it is not an assertion that the team will or
+will not win. In a 48-team single-elimination format the outcome carries high entropy, and even the strongest
+entrant rarely exceeds approximately 20%. The informative content therefore resides in the full predictive
+distribution and, critically, in its calibration: when the model assigns 20%, the event should occur in
+approximately 20% of cases. Calibration is evidenced in the validation section below. Movements of a few
+tenths of a percentage point between runs reflect Monte Carlo sampling error rather than a material change in
+the forecast.</p>
 
-<h2>Inputs &amp; variables</h2>
-<p>The forecast is driven by <b>one strength variable plus tournament structure</b>; other quantities are
-either tested as candidates or used only as a benchmark.</p>
+<h2>Data inputs and variables</h2>
+<p>The forecast is driven by a single strength factor together with the fixed tournament structure.
+Additional variables were evaluated as candidate predictors or are used solely as an external benchmark, as
+set out below.</p>
 <table>
-<tr><th class="l">Variable</th><th class="l">Role</th><th class="l">In the forecast?</th></tr>
-<tr><td class="l">Elo rating (per team)</td><td class="l">team strength; updated live from results</td><td class="l">Yes — the core driver</td></tr>
-<tr><td class="l">Host advantage</td><td class="l">Elo bump for the host nations on home soil</td><td class="l">Yes (capped, +60 Elo)</td></tr>
-<tr><td class="l">Match results (live)</td><td class="l">fix played games, re-rate, re-simulate the rest</td><td class="l">Yes, as entered</td></tr>
-<tr><td class="l">Betting market odds</td><td class="l">external benchmark &amp; blend partner</td><td class="l">Blend &amp; comparison only</td></tr>
-<tr><td class="l">Squad market value</td><td class="l">candidate feature (Transfermarkt)</td><td class="l">Tested — no added signal (below)</td></tr>
-<tr><td class="l">Rest days, match importance</td><td class="l">candidate features</td><td class="l">Tested — no added signal</td></tr>
+<tr><th class="l">Variable</th><th class="l">Role</th><th class="l">Status</th></tr>
+<tr><td class="l">Elo rating (per team)</td><td class="l">latent team strength; updated from in-tournament results</td><td class="l">Primary input</td></tr>
+<tr><td class="l">Host advantage</td><td class="l">Elo adjustment for host nations on home soil</td><td class="l">Applied (capped at +60 Elo)</td></tr>
+<tr><td class="l">Live match results</td><td class="l">fix completed fixtures, re-estimate, re-simulate the remainder</td><td class="l">Applied as entered</td></tr>
+<tr><td class="l">Market-implied probabilities</td><td class="l">external benchmark and blend counterpart</td><td class="l">Benchmark and blend only</td></tr>
+<tr><td class="l">Squad market value</td><td class="l">candidate predictor (Transfermarkt)</td><td class="l">Evaluated; no incremental signal</td></tr>
+<tr><td class="l">Rest days, match importance</td><td class="l">candidate predictors</td><td class="l">Evaluated; no incremental signal</td></tr>
 </table>
 
-<h2>Methods</h2>
-<h3>1 · Strength — the Elo rating system</h3>
-<p>Each team has a rating; after every match it updates by <code>K · G · (result − expected)</code>, where the
-expected result is a logistic function of the rating gap and <code>G</code> scales the update by margin of
-victory. This is the model's only measure of team quality. During the tournament, ratings update from the
-results entered, so the forecast re-prices as games are played.</p>
-<h3>2 · The match model — Dixon–Coles, fit by maximum likelihood</h3>
-<p>Each match produces two goal counts modelled as Poisson processes with the Dixon–Coles (1997) low-score
-correction (a parameter ρ that restores realistic draw frequencies, which independent Poisson under-states).
-Goal rates follow a log-linear link, <code>log λ = μ ± γ·d/400</code>, where <code>d</code> is the Elo gap plus
-a home term. The four parameters are estimated by maximum likelihood (L-BFGS-B) on ~23,275
-international matches since 2002. Current fitted values:
+<h2>Methodology</h2>
+<h3>1 · Strength estimation (Elo)</h3>
+<p>Each team carries a rating that updates after every observed match by <code>K · G · (result − expected)</code>,
+where the expected result is the logistic function of the rating differential and <code>G</code> weights the
+revision by margin of victory. The rating is the model's sole measure of team quality. During the tournament,
+ratings are revised from completed fixtures, so the forecast is re-priced as matches are played.</p>
+<h3>2 · Match model (Dixon–Coles, maximum likelihood)</h3>
+<p>Each fixture is represented by two goal counts modelled as Poisson processes with the Dixon–Coles (1997)
+low-score correction — a dependence parameter ρ that restores the empirical frequency of low-scoring draws,
+which the independent-Poisson benchmark understates. Goal intensities follow a log-linear link,
+<code>log λ = μ ± γ·d/400</code>, where <code>d</code> is the rating differential inclusive of the home term.
+The four parameters are estimated by maximum likelihood (L-BFGS-B) on approximately 23,275
+international fixtures since 2002. Current estimates:
 <span class="kbd">μ = 0.195</span><span class="kbd">γ = 0.728 (≈ GOAL_SCALE 633)</span>
 <span class="kbd">home = 112 Elo</span><span class="kbd">ρ = -0.046</span>.</p>
-<h3>3 · The tournament — Monte Carlo simulation</h3>
-<p>Each of the 104 matches is sampled from that scoreline distribution; groups, the official-style
-third-place allocation, and the knockout bracket are resolved exactly per the real format; the champion is
-recorded. Repeating 10,000 times turns single-match probabilities into round-by-round and championship
-probabilities, each reported with a <b>Monte-Carlo standard error</b>.</p>
-<h3>4 · Market blend</h3>
-<p>The de-vigged outright market is combined with the model (default 70% market / 30% model), because the
-two err partly independently and the blend out-predicts either alone.</p>
-<h3>5 · Feature testing — ordered logistic regression + walk-forward CV</h3>
-<p>To ask whether extra variables (squad value, rest, match importance) add value, an ordered-logit
-Win/Draw/Loss model is fit by maximum likelihood and each candidate is scored by its <i>incremental</i>
-out-of-sample log-loss <b>over Elo</b>, under expanding-window (walk-forward) cross-validation with
-paired-bootstrap confidence intervals. None beat Elo (see limitations).</p>
+<h3>3 · Tournament simulation (Monte Carlo)</h3>
+<p>Each of the 104 fixtures is sampled from its estimated scoreline distribution; the group stage, the
+allocation of the eight best third-placed teams, and the knockout bracket are resolved exactly per the
+official format; and the champion is recorded. Ten thousand independent paths convert match-level
+probabilities into stage-by-stage and championship probabilities, each reported with its Monte Carlo standard
+error.</p>
+<h3>4 · Combination with the market</h3>
+<p>The de-vigged outright market is combined with the model through a weighted opinion pool (default 70%
+market, 30% model). Because the two sources err on partially independent information sets, the combination
+attains lower out-of-sample loss than either constituent alone.</p>
+<h3>5 · Variable selection (ordered logit, walk-forward cross-validation)</h3>
+<p>To assess whether additional variables carry information beyond the rating, an ordered-logit Win/Draw/Loss
+model is estimated by maximum likelihood and each candidate is scored by its <i>incremental</i> out-of-sample
+log loss relative to an Elo-only specification, under expanding-window (walk-forward) cross-validation with
+paired-bootstrap confidence intervals. No candidate produced a statistically distinguishable improvement
+(see Limitations).</p>
 
-<h2>How it is tested, and the results</h2>
-<p>The model is scored <b>out of sample</b>: parameters are fit on matches before 2022-01-01 and judged on the
-<b>4,572</b> internationals played since. Lower log-loss / Brier / RPS is better; accuracy is the share
-of Win/Draw/Loss called correctly. It is measured against a coin, the no-skill base rate, and a one-line
-Elo-logistic benchmark.</p>
+<h2>Out-of-sample validation</h2>
+<p>Performance is assessed strictly out of sample: parameters are estimated on fixtures prior to 2022-01-01 and
+evaluated on the 4,572 international fixtures played subsequently. Lower log loss, Brier score, and ranked
+probability score (RPS) indicate better probabilistic accuracy; accuracy is the share of Win/Draw/Loss
+outcomes correctly assigned the highest probability. Benchmarks are a uniform (no-information) forecast, the
+empirical base rate, and a parsimonious Elo-only ordered-logit specification.</p>
 <table>
-<tr><th class="l">Model</th><th>Log-loss</th><th>Brier</th><th>RPS</th><th>Accuracy</th></tr>
+<tr><th class="l">Specification</th><th>Log loss</th><th>Brier</th><th>RPS</th><th>Accuracy</th></tr>
 <tr><td class='l'>Coin (1/3 each)</td><td>1.0986</td><td>0.6667</td><td>0.4791</td><td>48%</td></tr><tr><td class='l'>Base rate (no skill)</td><td>1.0502</td><td>0.6333</td><td>0.4566</td><td>48%</td></tr><tr><td class='l'>Elo-logistic</td><td>0.8802</td><td>0.5177</td><td>0.3457</td><td>60%</td></tr><tr><td class='l'>Model (Elo + DC-MLE)</td><td>0.8802</td><td>0.5180</td><td>0.3460</td><td>60%</td></tr>
 </table>
-<p><b>Verdict.</b> The model beats a coin by ≈20% and the no-skill base rate by ≈16%
-on log-loss (a McFadden pseudo-R² of ≈0.16), and it is <b>well-calibrated</b> — expected calibration error
-0.025 (when it says X%, it happens about X%). It essentially ties the simple Elo-logistic, which is the
-honest, important caveat: the elaborate goals machinery earns its keep on <i>scorelines</i> (needed for group
-tie-breakers and the bracket), not on sharper Win/Draw/Loss calls. Calibration is also confirmed on a
-reliability curve from a 6-fold walk-forward cross-validation.</p>
+<p>On the held-out sample, the model reduces log loss by approximately 20% relative to the
+uniform benchmark and 16% relative to the empirical base rate (McFadden pseudo-R² ≈ 0.16),
+and is well calibrated, with an expected calibration error of 0.025. Its discriminative performance is
+statistically indistinguishable from the Elo-only benchmark; the additional structure of the scoreline model
+is therefore justified by its role in resolving group-stage tie-breakers and bracket progression rather than
+by superior match-level discrimination. Calibration is corroborated by a reliability analysis under six-fold
+expanding-window cross-validation.</p>
 
 <h2>Assumptions</h2>
-<p>Goals follow a Poisson / Dixon–Coles law; a team's quality is summarised by one rating; the Elo gap maps
-log-linearly to goal rates; matches are independent given ratings; team strength is fixed within a tournament
-apart from results-driven updates and a once-per-tournament rating-uncertainty draw; home advantage is
-additive in Elo and applied only to hosts; penalty shootouts are near coin-flips with a small skill tilt; and
-the relationship fit on 2002–present is assumed to hold for 2026.</p>
+<p>The framework assumes that goals follow a Poisson/Dixon–Coles law; that team quality is adequately
+summarised by a single rating; that the rating differential maps log-linearly to goal intensities; that
+fixtures are conditionally independent given ratings; that team strength is fixed within a tournament apart
+from results-driven revisions and a single per-tournament rating-uncertainty draw; that home advantage is
+additive in the rating and confined to host nations; that penalty shoot-outs are approximately symmetric with
+a small skill component; and that the relationship estimated over 2002 to the present is stationary through
+2026.</p>
 
-<h2>Limitations &amp; honest caveats</h2>
-<p>This is a well-calibrated <b>Elo-based</b> forecaster, not a market-beater. It uses less information than
-the betting market (no injuries, line-ups, form, or money flow) and therefore tends to <b>track, not beat</b>,
-a sharp price — and to be somewhat over-concentrated on the highest-rated teams. Every attempt to push past
-this "Elo ceiling" from within was tested and <b>rejected out of sample</b>: a friendly-aware goals fit, a
-match-importance interaction, and squad market value all failed to improve accuracy (squad value is ~0.80
-correlated with Elo and its orthogonal part showed no signal), and the rating-uncertainty parameter could not
-be cleanly identified from match data. Only importing external information — the market blend — helped. The
-model states its own ceiling rather than hiding it.</p>
+<h2>Limitations and scope</h2>
+<p>The model is deliberately constrained to a single latent strength factor and consequently incorporates less
+information than regulated betting markets, which price squad availability, team selection, recent form, and
+order flow. It should therefore be expected to track, rather than to outperform, an efficient closing price,
+and it exhibits mild over-concentration on the highest-rated entrants. Several extensions intended to relax the
+single-factor constraint were evaluated and did not improve out-of-sample performance: a friendly-adjusted
+scoreline fit, a match-importance interaction, and squad market value — the last approximately 0.80 correlated
+with the rating, with no measurable signal in its orthogonal component. The tournament-level
+rating-uncertainty parameter could not be identified from match-level data. Only the incorporation of external
+information, through the market blend, produced a measurable improvement. These negative results are disclosed
+rather than omitted.</p>
 
-<h2>Data sources &amp; credits</h2>
+<h2>Data sources and attribution</h2>
 <div class="box">
 <div class="src"><span><b>Match results</b> — historical international results since 1872, community-maintained
  by Mart Jürisoo.</span><span><a href="https://github.com/martj42/international_results">github.com/martj42</a></span></div>
@@ -128,19 +146,24 @@ model states its own ceiling rather than hiding it.</p>
 <div class="src"><span><b>Betting odds</b> — The Odds API, aggregating major bookmakers (blend &amp; benchmark).</span>
  <span><a href="https://the-odds-api.com/">the-odds-api.com</a></span></div>
 </div>
-<p class="mut">All data remains the property of its respective providers and is used here for non-commercial,
-educational research. This project is independent and is not affiliated with, authorised by, or endorsed by
-FIFA, the data providers, or any bookmaker. Academic lineage: Elo (1978); Dixon &amp; Coles, <i>Applied
-Statistics</i> (1997); standard probabilistic-forecast scoring (Brier 1950; ranked probability score, Epstein
-1969).</p>
+<p class="mut">All datasets remain the property of their respective providers and are used here for
+non-commercial research purposes. The project is independent and is not affiliated with, authorised by, or
+endorsed by FIFA, the data providers, or any bookmaker. Methodological lineage: Elo (1978); Dixon &amp; Coles,
+<i>Applied Statistics</i> (1997); and the probabilistic scoring rules of Brier (1950) and Epstein (1969).</p>
 
 <h2>Reproducibility</h2>
-<p>The full pipeline — data ingestion, leakage-free rating, MLE fitting, simulation, backtesting and this
-dashboard — is scripted and covered by an automated test suite. The methodology, validation figures, and the
-record of what was tried and rejected are documented alongside the code.</p>
+<p>The full pipeline — data ingestion, leakage-free rating, maximum-likelihood estimation, simulation,
+backtesting, and the generation of this site — is fully scripted and covered by an automated test suite. The
+methodology, the validation diagnostics, and the complete record of specifications evaluated and rejected are
+maintained alongside the source code.</p>
 
-<div class="foot">© 2026 <b>Pedro Henrique Figueiredo Magalhães</b>. Model, code, analysis, and writing by
-Pedro Henrique Figueiredo Magalhães. Provided for informational and educational purposes only — not betting
-advice. Not affiliated with FIFA. Data © respective providers (see above).<br>
-Generated 2026-06-19 23:10.</div>
+<h2>Disclaimer</h2>
+<p>This material is provided for informational and educational purposes only. It does not constitute
+financial, investment, or betting advice, nor an offer or solicitation to enter into any transaction. Past
+performance and out-of-sample diagnostics are not guarantees of future results.</p>
+
+<div class="foot">© 2026 <b>Pedro Henrique Figueiredo Magalhães</b>. Model design, implementation, analysis,
+and documentation by Pedro Henrique Figueiredo Magalhães. All rights reserved. Data © their respective
+providers (see above).<br>
+Last generated 2026-06-19 23:34.</div>
 </div></body></html>
