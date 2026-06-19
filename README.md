@@ -46,7 +46,7 @@ bash scripts/daily.sh                      # odds -> forecast -> dashboard -> de
 | `docs/METHODOLOGY.md` | the method, the validation, and the honest limits |
 | `STRUCTURE.md` | repo layout |
 
-## Honest summary
+## Summary
 
 This is a well-calibrated **Elo-based** forecaster, not a market-beater. Every
 attempt to push past the Elo information ceiling from within (richer goals
