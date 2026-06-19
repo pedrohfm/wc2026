@@ -110,21 +110,23 @@ TEMPLATE = r"""<!doctype html>
 <title>World Cup 2026 — Forecast Tracker</title>
 <style>
 :root{
-  --bg:#0b1020; --panel:#121a31; --panel2:#0f1730; --ink:#e8edf7; --mut:#8a97b5;
-  --line:#22304f; --accent:#5b8cff; --good:#34d399; --bad:#fb7185; --chip:#1b2745;
+  --bg:#f4f6f9; --panel:#ffffff; --panel2:#f7f9fc; --ink:#1f2a37; --mut:#64748b;
+  --line:#e6e9ef; --accent:#2563eb; --good:#15803d; --bad:#dc2626; --chip:#eef2f7;
 }
 *{box-sizing:border-box} html,body{margin:0}
-body{background:linear-gradient(180deg,#0b1020,#0c1226);color:var(--ink);
-  font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1180px;margin:0 auto;padding:22px}
+body{background:var(--bg);color:var(--ink);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:26px 22px 40px}
 h1{font-size:22px;margin:0;letter-spacing:.2px}
 .sub{color:var(--mut);font-size:12.5px;margin-top:3px}
 .row{display:flex;gap:16px;flex-wrap:wrap}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
-.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.kpi .l{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.6px}
-.kpi .v{font-size:20px;font-weight:650;margin-top:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
+  box-shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);margin-top:16px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+  box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.7px}
+.kpi .v{font-size:20px;font-weight:600;margin-top:5px}
 .kpi .d{font-size:12px;margin-top:2px}
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px}
 .controls .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -135,9 +137,10 @@ select,input[type=search]{background:var(--panel2);border:1px solid var(--line);
   border-radius:9px;padding:6px 9px;font-size:12.5px}
 .chartwrap{position:relative}
 svg{display:block;width:100%}
-.tip{position:absolute;pointer-events:none;background:#0a1124;border:1px solid var(--line);
-  border-radius:8px;padding:6px 9px;font-size:12px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:5}
-.grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}
+.tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);color:var(--ink);
+  border-radius:8px;padding:6px 9px;font-size:12px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:5;
+  box-shadow:0 4px 14px rgba(16,24,40,.12)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
 .grid-2>*{min-width:0}
 .kpis,.grid-2,.card{width:100%}
 @media(max-width:860px){.grid-2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
@@ -156,13 +159,15 @@ svg{display:block;width:100%}
 .mover:last-child{border-bottom:0}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
-th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;position:sticky;top:0;background:var(--panel)}
+th,td{padding:8px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;position:sticky;top:0;background:var(--panel);z-index:2}
 td.team,th.team{text-align:left}
-.tbar{position:relative;height:16px;background:#0c1430;border-radius:4px;min-width:54px;overflow:hidden;display:inline-block;width:90px;vertical-align:middle}
-.tbar > i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;opacity:.85}
-.tbar > span{position:absolute;left:6px;top:0;line-height:16px;font-size:11px;color:#dfe7fb}
-.chip{font-size:10.5px;padding:1px 7px;border-radius:20px;color:#dfe7fb;background:var(--chip)}
+.cellv{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:54px}
+.cellv .num{font-size:11.5px;color:var(--ink)}
+.cellv .bt{height:4px;width:100%;background:#eef2f7;border-radius:2px;position:relative;overflow:hidden}
+.cellv .bt > i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;opacity:.9}
+.flag{font-size:14px;margin-right:7px;vertical-align:-1px}
+.chip{font-size:10.5px;padding:2px 9px;border-radius:20px;font-weight:500}
 .up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--mut)}
 .tablewrap{max-height:560px;overflow:auto;border-radius:10px}
 .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
@@ -207,22 +212,21 @@ td.team,th.team{text-align:left}
     <div class="legend" id="legend"></div>
   </div>
 
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:6px">Standings — latest
+      <span class="sub" id="latlbl"></span></div>
+    <div class="controls"><input type="search" id="search" placeholder="filter team…" style="flex:1">
+      <span class="lbl">Δ vs ex-ante</span></div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </div>
+
   <div class="grid-2">
-    <div class="card">
-      <div style="font-weight:600;margin-bottom:6px">Standings — latest
-        <span class="sub" id="latlbl"></span></div>
-      <div class="controls"><input type="search" id="search" placeholder="filter team…" style="flex:1">
-        <span class="lbl">Δ vs ex-ante</span></div>
-      <div class="tablewrap"><table id="tbl"></table></div>
-    </div>
-    <div>
-      <div class="card"><div style="font-weight:600;margin-bottom:8px">Biggest movers
-        <span class="sub">(champion %, vs ex-ante)</span></div>
-        <div id="movers"></div></div>
-      <div class="card" style="margin-top:16px"><div style="font-weight:600;margin-bottom:8px">Model vs market
-        <span class="sub">champion %</span></div>
-        <div id="market"></div></div>
-    </div>
+    <div class="card"><div style="font-weight:600;margin-bottom:8px">Biggest movers
+      <span class="sub">(champion %, vs ex-ante)</span></div>
+      <div id="movers"></div></div>
+    <div class="card"><div style="font-weight:600;margin-bottom:8px">Model vs market
+      <span class="sub">champion %</span></div>
+      <div id="market"></div></div>
   </div>
 
   <div class="foot">
@@ -234,10 +238,24 @@ td.team,th.team{text-align:left}
 
 <script>
 const DATA = /*DATA*/;
-const PAL = ["#5b8cff","#34d399","#fbbf24","#fb7185","#a78bfa","#22d3ee","#f472b6","#4ade80",
-             "#fb923c","#60a5fa","#e879f9","#2dd4bf","#facc15","#f87171","#818cf8","#38bdf8",
-             "#c084fc","#fcd34d","#fda4af","#86efac","#93c5fd","#d8b4fe","#5eead4","#fde68a"];
-const CONF = {UEFA:"#3b82f6",CONMEBOL:"#f59e0b",CONCACAF:"#ef4444",CAF:"#22c55e",AFC:"#f97316",OFC:"#14b8a6"};
+const PAL = ["#2563eb","#e8590c","#16a34a","#9333ea","#0891b2","#dc2626","#ca8a04","#db2777",
+             "#4d7c0f","#0f766e","#7c3aed","#b45309","#1d4ed8","#be123c","#15803d","#6d28d9",
+             "#0e7490","#a16207","#9d174d","#3f6212","#1e40af","#92400e","#5b21b6","#155e75"];
+const CONF = {UEFA:"#2563eb",CONMEBOL:"#d97706",CONCACAF:"#dc2626",CAF:"#16a34a",AFC:"#ea580c",OFC:"#0d9488"};
+const CONF2 = {UEFA:["#e6effb","#1d4ed8"],CONMEBOL:["#fdf0d9","#b45309"],CONCACAF:["#fdeaea","#b91c1c"],
+               CAF:["#e7f6ec","#15803d"],AFC:["#feeede","#c2410c"],OFC:["#e3f5f3","#0f766e"]};
+const ISO = {Mexico:"MX",Canada:"CA","United States":"US",Haiti:"HT","Curaçao":"CW",Panama:"PA",
+ Brazil:"BR",Paraguay:"PY",Ecuador:"EC",Uruguay:"UY",Colombia:"CO",Argentina:"AR","South Korea":"KR",
+ Qatar:"QA",Australia:"AU",Japan:"JP",Iran:"IR","Saudi Arabia":"SA",Iraq:"IQ",Jordan:"JO",Uzbekistan:"UZ",
+ "South Africa":"ZA",Morocco:"MA","Côte d'Ivoire":"CI",Tunisia:"TN",Egypt:"EG","Cabo Verde":"CV",
+ Senegal:"SN",Algeria:"DZ","DR Congo":"CD",Ghana:"GH",Czechia:"CZ",Switzerland:"CH",
+ "Bosnia & Herzegovina":"BA","Türkiye":"TR",Germany:"DE",Netherlands:"NL",Sweden:"SE",Belgium:"BE",
+ Spain:"ES",France:"FR",Norway:"NO",Austria:"AT",Portugal:"PT",Croatia:"HR","New Zealand":"NZ"};
+const _ENG=String.fromCodePoint(0x1F3F4,0xE0067,0xE0062,0xE0065,0xE006E,0xE0067,0xE007F);
+const _SCO=String.fromCodePoint(0x1F3F4,0xE0067,0xE0062,0xE0073,0xE0063,0xE0074,0xE007F);
+function flag(t){ if(t==="England")return _ENG; if(t==="Scotland")return _SCO;
+  const c=ISO[t]; return c? c.replace(/./g,ch=>String.fromCodePoint(127397+ch.charCodeAt(0))) : ""; }
+function nm(t){ const f=flag(t); return (f?`<span class="flag">${f}</span>`:"")+t; }
 const R = DATA.rounds, L = DATA.labels, N = L.length;
 const state = {metric:"Win", mode:"prob", topN:8, sort:"Win", dir:1, hi:null, search:""};
 
@@ -262,7 +280,7 @@ function kpis(){
     ["Top faller", worst, `<span class="down">▼ ${worstd.toFixed(1)} pp</span>`],
   ];
   document.getElementById("kpis").innerHTML = cards.map(c=>
-    `<div class="kpi"><div class="l">${c[0]}</div><div class="v">${c[1]}</div><div class="d">${c[2]}</div></div>`).join("");
+    `<div class="kpi"><div class="l">${c[0]}</div><div class="v">${nm(c[1])}</div><div class="d">${c[2]}</div></div>`).join("");
 }
 
 /* ---------- line / bump chart ---------- */
@@ -330,7 +348,7 @@ function legend(){
   const teams=topTeams(), col=colorFor(teams);
   document.getElementById("legend").innerHTML = teams.map(t=>
     `<div class="it ${state.hi&&state.hi!==t?'dim':''}" data-t="${t}">
-       <span class="dot" style="background:${col[t]}"></span>${t} <b style="color:var(--ink)">${latest(t).toFixed(1)}%</b></div>`).join("");
+       <span class="dot" style="background:${col[t]}"></span>${nm(t)} <b style="color:var(--ink)">${latest(t).toFixed(1)}%</b></div>`).join("");
   document.querySelectorAll("#legend .it").forEach(el=>{
     el.onmouseenter=()=>{state.hi=el.getAttribute("data-t");draw()};
     el.onmouseleave=()=>{state.hi=null;draw()};});
@@ -341,7 +359,7 @@ function movers(){
   const arr=DATA.teams.map(t=>({t, d:(DATA.series[t].Win[N-1]??0)-(DATA.series[t].Win[0]??0),
         now:DATA.series[t].Win[N-1]??0})).filter(o=>Math.abs(o.d)>=0.05);
   arr.sort((a,b)=>b.d-a.d); const top=arr.slice(0,5), bot=arr.slice(-5).reverse();
-  const row=o=>`<div class="mover"><span><span class="dot" style="background:${CONF[DATA.info[o.t].Conf]||'#888'}"></span>${o.t}</span>
+  const row=o=>`<div class="mover"><span>${nm(o.t)}</span>
      <span><span class="${o.d>0?'up':(o.d<0?'down':'flat')}">${o.d>0?'▲':'▼'} ${o.d>0?'+':''}${o.d.toFixed(1)}</span>
      <span class="sub" style="margin-left:8px">${o.now.toFixed(1)}%</span></span></div>`;
   document.getElementById("movers").innerHTML =
@@ -357,7 +375,7 @@ function market(){
   const teams=rankedTeams().slice(0,10);
   const mx=Math.max(...teams.map(t=>Math.max(latest(t)||0, mk[t]||0)))||1;
   el.innerHTML=teams.map(t=>{const m=mk[t]||0,p=latest(t)||0;
-    return `<div class="mkt"><div class="nm">${t}</div><div class="mcol">
+    return `<div class="mkt"><div class="nm">${nm(t)}</div><div class="mcol">
        <div class="mrow"><i style="width:${(p/mx*100).toFixed(1)}%;background:${MODEL_C}"></i><span>${p.toFixed(1)}</span></div>
        <div class="mrow"><i style="width:${(m/mx*100).toFixed(1)}%;background:${MARKET_C}"></i><span>${m.toFixed(1)}</span></div>
      </div></div>`;}).join("")
@@ -376,12 +394,12 @@ function table(){
     R.map(r=>`<th data-c="${r}">${r}</th>`).join("")+`<th data-c="dW">Δ Win</th></tr>`;
   const mx={}; R.forEach(r=>mx[r]=Math.max(...DATA.teams.map(t=>DATA.series[t][r][N-1]??0)));
   const body=rows.map(t=>{
-    const inf=DATA.info[t]; const c=CONF[inf.Conf]||"#888";
-    const cells=R.map(r=>{const v=DATA.series[t][r][N-1]??0; const w=mx[r]?Math.max(2,v/mx[r]*100):0;
-      return `<td><span class="tbar"><i style="width:${w}%;background:${c}"></i><span>${v.toFixed(1)}</span></span></td>`;}).join("");
+    const inf=DATA.info[t]; const c=CONF[inf.Conf]||"#94a3b8"; const ch=CONF2[inf.Conf]||["#eef2f7","#64748b"];
+    const cells=R.map(r=>{const v=DATA.series[t][r][N-1]??0; const w=mx[r]?Math.max(3,v/mx[r]*100):0;
+      return `<td><div class="cellv"><span class="num">${v.toFixed(1)}</span><span class="bt"><i style="width:${w}%;background:${c}"></i></span></div></td>`;}).join("");
     const dW=(DATA.series[t].Win[N-1]??0)-(DATA.series[t].Win[0]??0);
     const dcls=dW>0.05?'up':(dW<-0.05?'down':'flat'); const arr=dW>0.05?'▲':(dW<-0.05?'▼':'·');
-    return `<tr><td class="team">${t}</td><td><span class="chip" style="background:${c}33;color:${c}">${inf.Conf}</span></td>
+    return `<tr><td class="team">${nm(t)}</td><td><span class="chip" style="background:${ch[0]};color:${ch[1]}">${inf.Conf}</span></td>
       <td>${inf.Elo??''}</td>${cells}<td class="${dcls}">${arr} ${dW>0?'+':''}${dW.toFixed(1)}</td></tr>`;}).join("");
   const tbl=document.getElementById("tbl"); tbl.innerHTML=head+body;
   tbl.querySelectorAll("th").forEach(th=>th.onclick=()=>{const c=th.getAttribute("data-c");
@@ -438,21 +456,22 @@ def build_about(data):
         for m, v in rows.items())
 
     css = """
-:root{--bg:#0b1020;--panel:#121a31;--ink:#e8edf7;--mut:#8a97b5;--line:#22304f;--accent:#5b8cff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0b1020,#0c1226);color:var(--ink);
- font:15px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:820px;margin:0 auto;padding:22px}
+:root{--bg:#f4f6f9;--panel:#ffffff;--ink:#1f2a37;--mut:#64748b;--line:#e6e9ef;--accent:#2563eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+ font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:800px;margin:0 auto;padding:26px 22px 48px}
 nav{display:flex;gap:18px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:18px}
 nav a{text-decoration:none;font-size:13px}
-h1{font-size:25px;margin:.2em 0}h2{font-size:18px;margin:1.7em 0 .5em;border-bottom:1px solid var(--line);padding-bottom:6px}
-h3{font-size:14px;margin:1.3em 0 .3em;color:#cdd7f0}
-p,li{color:#d6deef}.mut{color:var(--mut)}a{color:var(--accent)}
-code{background:#0f1730;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:13px}
+h1{font-size:26px;margin:.3em 0;font-weight:600}
+h2{font-size:18px;margin:1.8em 0 .5em;border-bottom:1px solid var(--line);padding-bottom:7px;font-weight:600}
+h3{font-size:14px;margin:1.3em 0 .3em;color:#334155;font-weight:600}
+p,li{color:#334155}.mut{color:var(--mut)}a{color:var(--accent)}
+code{background:#eef2f7;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:13px}
 table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
-th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right}th{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:right}th{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
 td.l,th.l{text-align:left}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:12px 0}
-.kbd{display:inline-block;background:#0f1730;border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px;font-size:12.5px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:12px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.kbd{display:inline-block;background:#eef2f7;border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px;font-size:12.5px}
 .src{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
 .src:last-child{border-bottom:0}.foot{color:var(--mut);font-size:12.5px;margin:26px 0 8px;border-top:1px solid var(--line);padding-top:14px}
 """
