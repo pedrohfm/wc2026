@@ -108,6 +108,8 @@ TEMPLATE = r"""<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>World Cup 2026 — Forecast Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f4f6f9; --panel:#ffffff; --panel2:#f7f9fc; --ink:#1f2a37; --mut:#64748b;
@@ -115,10 +117,22 @@ TEMPLATE = r"""<!doctype html>
 }
 *{box-sizing:border-box} html,body{margin:0}
 body{background:var(--bg);color:var(--ink);
-  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  font:14px/1.5 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1120px;margin:0 auto;padding:26px 22px 40px}
-h1{font-size:22px;margin:0;letter-spacing:.2px}
 .sub{color:var(--mut);font-size:12.5px;margin-top:3px}
+/* masthead */
+.mast{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;
+  border-bottom:3px solid var(--ink);padding-bottom:14px}
+.brand .eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.brand h1{font-size:40px;line-height:.98;font-weight:800;letter-spacing:-.025em;margin:7px 0 0;color:var(--ink)}
+.tabs{display:flex;gap:6px}
+.tabs a{font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;
+  color:var(--mut);padding:8px 15px;border-radius:8px;white-space:nowrap}
+.tabs a.on{color:#fff;background:var(--ink)}
+.tabs a:not(.on):hover{background:var(--chip)}
+.sec{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+.sec .sub{text-transform:none;letter-spacing:normal;font-weight:500}
+@media(max-width:600px){.brand h1{font-size:30px}.mast{flex-direction:column;align-items:flex-start;gap:12px}}
 .row{display:flex;gap:16px;flex-wrap:wrap}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;
   box-shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);margin-top:16px}
@@ -126,7 +140,7 @@ h1{font-size:22px;margin:0;letter-spacing:.2px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
   box-shadow:0 1px 2px rgba(16,24,40,.04)}
 .kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.7px}
-.kpi .v{font-size:20px;font-weight:600;margin-top:5px}
+.kpi .v{font-size:21px;font-weight:800;letter-spacing:-.01em;margin-top:5px}
 .kpi .d{font-size:12px;margin-top:2px}
 .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px}
 .controls .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -182,22 +196,23 @@ td.team,th.team{text-align:left}
 .mrow > span{font-size:11px;color:var(--mut);width:34px;flex:none;text-align:right}
 </style></head>
 <body><div class="wrap">
-  <div style="display:flex;gap:18px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:16px">
-    <span style="font-weight:700;letter-spacing:.3px">WC&nbsp;2026 Model</span>
-    <a href="index.html" style="color:var(--ink);text-decoration:none;font-size:13px;border-bottom:2px solid var(--accent);padding-bottom:11px">Forecast tracker</a>
-    <a href="about.html" style="color:var(--mut);text-decoration:none;font-size:13px">About &amp; methodology</a>
+  <div class="mast">
+    <div class="brand">
+      <div class="eyebrow">FIFA World Cup 2026 · Forecast model</div>
+      <h1>Forecast&nbsp;Tracker</h1>
+    </div>
+    <div style="text-align:right">
+      <div class="tabs"><a href="index.html" class="on">Tracker</a><a href="about.html">Methodology</a></div>
+      <div class="sub" id="gen" style="margin-top:9px"></div>
+    </div>
   </div>
-  <div class="row" style="justify-content:space-between;align-items:flex-end">
-    <div><h1>World Cup 2026 — Forecast Tracker</h1>
-      <div class="sub" id="sub"></div></div>
-    <div class="sub" id="gen"></div>
-  </div>
+  <div class="sub" id="sub" style="margin:9px 0 2px"></div>
 
   <div class="kpis" id="kpis"></div>
 
   <div class="card">
     <div class="controls">
-      <span style="font-weight:600">Progression</span>
+      <span class="sec">Progression</span>
       <div class="seg" id="metricSeg"></div>
       <div class="seg" id="modeSeg">
         <button data-mode="prob" class="on">Probability</button>
@@ -213,7 +228,7 @@ td.team,th.team{text-align:left}
   </div>
 
   <div class="card">
-    <div style="font-weight:600;margin-bottom:6px">Standings — latest
+    <div class="sec" style="margin-bottom:10px">Standings — latest
       <span class="sub" id="latlbl"></span></div>
     <div class="controls"><input type="search" id="search" placeholder="filter team…" style="flex:1">
       <span class="lbl">Δ vs ex-ante</span></div>
@@ -221,10 +236,10 @@ td.team,th.team{text-align:left}
   </div>
 
   <div class="grid-2">
-    <div class="card"><div style="font-weight:600;margin-bottom:8px">Biggest movers
+    <div class="card"><div class="sec" style="margin-bottom:10px">Biggest movers
       <span class="sub">(champion %, vs ex-ante)</span></div>
       <div id="movers"></div></div>
-    <div class="card"><div style="font-weight:600;margin-bottom:8px">Model vs market
+    <div class="card"><div class="sec" style="margin-bottom:10px">Model vs market
       <span class="sub">champion %</span></div>
       <div id="market"></div></div>
   </div>
@@ -458,11 +473,13 @@ def build_about(data):
     css = """
 :root{--bg:#f4f6f9;--panel:#ffffff;--ink:#1f2a37;--mut:#64748b;--line:#e6e9ef;--accent:#2563eb}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
- font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+ font:15px/1.7 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
 .wrap{max-width:800px;margin:0 auto;padding:26px 22px 48px}
-nav{display:flex;gap:18px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:18px}
-nav a{text-decoration:none;font-size:13px}
-h1{font-size:26px;margin:.3em 0;font-weight:600}
+nav{display:flex;gap:8px;align-items:center;border-bottom:3px solid var(--ink);padding-bottom:13px;margin-bottom:20px}
+nav .bk{font-weight:800;letter-spacing:-.01em;margin-right:auto;font-size:15px}
+nav a{text-decoration:none;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--mut);padding:8px 14px;border-radius:8px}
+nav a.on{background:var(--ink);color:#fff}
+h1{font-size:34px;margin:.3em 0;font-weight:800;letter-spacing:-.025em}
 h2{font-size:18px;margin:1.8em 0 .5em;border-bottom:1px solid var(--line);padding-bottom:7px;font-weight:600}
 h3{font-size:14px;margin:1.3em 0 .3em;color:#334155;font-weight:600}
 p,li{color:#334155}.mut{color:var(--mut)}a{color:var(--accent)}
@@ -477,9 +494,9 @@ td.l,th.l{text-align:left}
 """
 
     body = f"""
-<nav><span style="font-weight:700">WC&nbsp;2026 Model</span>
- <a href="index.html" style="color:var(--mut)">Forecast tracker</a>
- <a href="about.html" style="color:var(--ink);border-bottom:2px solid var(--accent);padding-bottom:11px">About &amp; methodology</a></nav>
+<nav><span class="bk">World Cup 2026</span>
+ <a href="index.html">Tracker</a>
+ <a href="about.html" class="on">Methodology</a></nav>
 
 <h1>About this model</h1>
 <p class="mut">A transparent, calibrated probabilistic forecast of the 2026 FIFA World Cup — what it does,
@@ -603,7 +620,10 @@ Generated {data.get('generated','')}.</div>
 """
     return f"<!doctype html><html lang='en'><head><meta charset='utf-8'>" \
            f"<meta name='viewport' content='width=device-width,initial-scale=1'>" \
-           f"<title>About — World Cup 2026 Model</title><style>{css}</style></head>" \
+           f"<title>About — World Cup 2026 Model</title>" \
+           f"<link rel='preconnect' href='https://fonts.googleapis.com'><link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>" \
+           f"<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap' rel='stylesheet'>" \
+           f"<style>{css}</style></head>" \
            f"<body><div class='wrap'>{body}</div></body></html>"
 
 
