@@ -48,3 +48,18 @@ def test_outrights_average_and_normalize():
 def test_norm_passthrough():
     assert F.norm("Spain") == "Spain"
     assert F.norm("Czech Republic") == "Czechia"
+
+
+def test_drop_implausible_removes_glitches():
+    import pandas as pd
+    df = pd.DataFrame([
+        {"date": "2026-06-19", "home": "United States", "away": "Australia", "oh": 1.002, "od": 158.1, "oa": 511.8},
+        {"date": "2026-06-17", "home": "England", "away": "Croatia", "oh": 1.059, "od": 38.5, "oa": 177.3},
+        {"date": "2026-06-19", "home": "Mexico", "away": "South Korea", "oh": 2.02, "od": 3.30, "oa": 3.97},
+    ])
+    out = F.drop_implausible(df, max_fav=0.95)
+    teams = set(out["home"])
+    assert "Mexico" in teams                      # realistic line kept
+    assert "United States" not in teams           # ~99.8% favourite dropped
+    assert "England" not in teams                 # ~94%+ glitch dropped
+    assert len(out) == 1

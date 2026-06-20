@@ -24,6 +24,7 @@ Run from the project root:
 import argparse
 import datetime as dt
 import os
+import subprocess
 import sys
 
 import numpy as np
@@ -219,6 +220,12 @@ def main():
     else:
         print(f"  no {os.path.relpath(ODDS_CHAMP, ROOT)} found -> skipping.")
         print("  Add outright decimal odds (see data/odds_champion.example.csv) to enable.")
+
+    banner("STEP 8  Group-stage match probabilities")
+    try:
+        subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build_group_matches.py")], check=True)
+    except Exception as e:
+        print(f"  [group-stage step skipped: {e}]")
 
     banner("DONE")
     print(f"  Forecast written to {os.path.relpath(out_csv, ROOT)}.")

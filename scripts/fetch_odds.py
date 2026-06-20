@@ -106,6 +106,21 @@ def _get(url):
         return json.loads(r.read())
 
 
+MAX_FAV_PROB = 0.95   # drop rows whose de-vigged favourite exceeds this (feed glitches / settled lines)
+
+def drop_implausible(df, max_fav=MAX_FAV_PROB):
+    """Remove rows whose de-vigged favourite probability exceeds max_fav. These
+       are almost always data-feed artifacts (e.g. 1.00 / 158 / 512) rather than
+       real prices, and would distort the market benchmark."""
+    if df.empty:
+        return df
+    o = df[["oh", "od", "oa"]].astype(float)
+    imp = 1.0 / o
+    norm = imp.div(imp.sum(axis=1), axis=0)
+    keep = norm.max(axis=1) <= max_fav
+    return df[keep].reset_index(drop=True)
+
+
 def append_match_odds(new_df, path=MATCH_CSV):
     if new_df.empty:
         print("  no h2h events parsed."); return
@@ -115,8 +130,12 @@ def append_match_odds(new_df, path=MATCH_CSV):
             ["date", "home", "away"], keep="last")
     else:
         comb = new_df
+    before = len(comb)
+    comb = drop_implausible(comb)
+    dropped = before - len(comb)
     comb.sort_values(["date", "home"]).to_csv(path, index=False)
-    print(f"  match odds -> {os.path.relpath(path, ROOT)}  (now {len(comb)} rows; +{len(new_df)} this pull)")
+    msg = f"  match odds -> {os.path.relpath(path, ROOT)}  (now {len(comb)} rows; +{len(new_df)} this pull"
+    print(msg + (f"; dropped {dropped} implausible)" if dropped else ")"))
 
 
 def write_champion(odds, path=CHAMP_CSV):

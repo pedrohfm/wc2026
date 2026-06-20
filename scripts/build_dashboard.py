@@ -56,6 +56,42 @@ def market_probs():
     return {t: round(p / s * 100, 2) for t, p in imp.items()} if s else {}
 
 
+def _num(v):
+    try:
+        f = float(v)
+        return f if f == f else ""   # NaN -> ""
+    except (ValueError, TypeError):
+        return ""
+
+
+def collect_group():
+    """Latest group-stage match probabilities + per-match home-prob history.
+       Returns None if no group_matches_*.csv exist (tile then auto-hides)."""
+    files = sorted(glob.glob(os.path.join(OUT, "group_matches_*.csv")))
+    if not files:
+        return None
+    dates, hist = [], {}
+    for f in files:
+        m = re.search(r"group_matches_(\d{4}-\d{2}-\d{2})\.csv$", os.path.basename(f))
+        if not m:
+            continue
+        dates.append(m.group(1)[5:])
+        d = pd.read_csv(f)
+        for _, r in d.iterrows():
+            hist.setdefault(int(r["match"]), []).append(_num(r["m_home"]) or 0)
+    latest = pd.read_csv(files[-1])
+    rows = []
+    for _, r in latest.iterrows():
+        rows.append({"match": int(r["match"]), "group": str(r["group"]),
+                     "home": str(r["home"]), "away": str(r["away"]),
+                     "m_home": _num(r["m_home"]), "m_draw": _num(r["m_draw"]), "m_away": _num(r["m_away"]),
+                     "mkt_home": _num(r["mkt_home"]), "mkt_draw": _num(r["mkt_draw"]), "mkt_away": _num(r["mkt_away"]),
+                     "actual": ("" if pd.isna(r["actual"]) else str(r["actual"])),
+                     "score": ("" if pd.isna(r["score"]) else str(r["score"])),
+                     "played": int(r["played"])})
+    return {"dates": dates, "rows": rows, "hist": {str(k): v for k, v in hist.items()}}
+
+
 def build_data():
     snaps = collect()
     if not snaps:
@@ -80,6 +116,7 @@ def build_data():
         "labels": labels, "dates": dates, "rounds": ROUNDS,
         "teams": teams, "info": info, "series": series,
         "market": market_probs(),
+        "gm": collect_group(),
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
@@ -194,6 +231,20 @@ td.team,th.team{text-align:left}
 .mrow{display:flex;align-items:center;gap:6px}
 .mrow > i{height:9px;border-radius:3px;display:block;min-width:2px}
 .mrow > span{font-size:11px;color:var(--mut);width:34px;flex:none;text-align:right}
+/* group-stage tile */
+.gmkey{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin:0 4px 0 10px}
+.gmgrp{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:16px 0 4px}
+.gmrow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.gmrow:last-child{border-bottom:0}
+.gmteams{width:290px;flex:none;font-size:12.5px;display:flex;align-items:center;gap:6px}
+.gmteams .vs{color:var(--mut);font-size:11px;margin:0 3px}
+.gmbar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:#eef2f7}
+.gmbar > span{display:block;height:100%}
+.gmmkt{height:6px;margin-top:3px;opacity:.85}
+.gmnums{width:104px;flex:none;font-size:11px;color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+.gmright{width:96px;flex:none;text-align:right}
+.gmchip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
+@media(max-width:600px){.gmteams{width:130px;font-size:11.5px}.gmnums{display:none}.gmright{width:64px}}
 </style></head>
 <body><div class="wrap">
   <div class="mast">
@@ -242,6 +293,19 @@ td.team,th.team{text-align:left}
     <div class="card"><div class="sec" style="margin-bottom:10px">Model vs market
       <span class="sub">champion %</span></div>
       <div id="market"></div></div>
+  </div>
+
+  <div class="card" id="gmcard" style="display:none;margin-top:16px">
+    <div class="sec" style="margin-bottom:10px">Group-stage matches
+      <span class="sub">model &amp; market win / draw / loss, with results as they come in</span></div>
+    <div class="controls">
+      <label class="lbl">Group</label><select id="gmsel"></select>
+      <span class="sub" style="margin-left:auto">
+        <span class="gmkey" style="background:#2563eb"></span>home win
+        <span class="gmkey" style="background:#94a3b8"></span>draw
+        <span class="gmkey" style="background:#d97706"></span>away win</span>
+    </div>
+    <div id="gmlist"></div>
   </div>
 
   <div class="foot">
@@ -421,6 +485,47 @@ function table(){
     if(c==="team"||c==="dW")return; if(state.sort===c)state.dir*=-1; else {state.sort=c;state.dir=1;} table();});
 }
 
+/* ---------- group-stage matches ---------- */
+const GHW="#2563eb",GDR="#94a3b8",GAW="#d97706";
+function gspark(arr){
+  if(!arr||arr.length<2) return "";
+  const w=68,h=18; const x=i=>i/(arr.length-1)*w; const y=v=>h-2-(Math.max(0,Math.min(100,v))/100)*(h-4);
+  const d=arr.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
+  return `<svg width="${w}" height="${h}" style="vertical-align:middle" aria-hidden="true"><path d="${d}" fill="none" stroke="${GHW}" stroke-width="1.5"/></svg>`;
+}
+function paintGroups(g){
+  const rows=DATA.gm.rows.filter(r=>g==="ALL"||r.group===g);
+  const byG={}; rows.forEach(r=>{(byG[r.group]=byG[r.group]||[]).push(r);});
+  let html="";
+  Object.keys(byG).sort().forEach(grp=>{
+    html+=`<div class="gmgrp">Group ${grp}</div>`;
+    byG[grp].forEach(r=>{
+      const bar=`<div class="gmbar"><span style="width:${r.m_home}%;background:${GHW}"></span><span style="width:${r.m_draw}%;background:${GDR}"></span><span style="width:${r.m_away}%;background:${GAW}"></span></div>`;
+      const hasM = r.mkt_home!=="" && r.mkt_home!=null;
+      const mkt = hasM ? `<div class="gmbar gmmkt"><span style="width:${r.mkt_home}%;background:${GHW}"></span><span style="width:${r.mkt_draw}%;background:${GDR}"></span><span style="width:${r.mkt_away}%;background:${GAW}"></span></div>` : "";
+      let right;
+      if(r.played){ const oc=r.actual, col=oc==="H"?GHW:(oc==="A"?GAW:GDR);
+        right=`<span class="gmchip" style="background:${col}22;color:${col}">FT ${r.score}</span>`; }
+      else right=gspark(DATA.gm.hist[String(r.match)]);
+      html+=`<div class="gmrow">
+        <div class="gmteams">${nm(r.home)}<span class="vs">v</span>${nm(r.away)}</div>
+        <div style="flex:1;min-width:80px">${bar}${mkt}</div>
+        <div class="gmnums">${r.m_home} / ${r.m_draw} / ${r.m_away}</div>
+        <div class="gmright">${right}</div></div>`;
+    });
+  });
+  document.getElementById("gmlist").innerHTML=html;
+}
+function renderGroups(){
+  if(!DATA.gm || !DATA.gm.rows || !DATA.gm.rows.length) return;   // tile stays hidden
+  document.getElementById("gmcard").style.display="";
+  const sel=document.getElementById("gmsel");
+  const groups=[...new Set(DATA.gm.rows.map(r=>r.group))].sort();
+  sel.innerHTML=`<option value="ALL">All groups</option>`+groups.map(g=>`<option value="${g}">Group ${g}</option>`).join("");
+  sel.onchange=()=>paintGroups(sel.value);
+  paintGroups("ALL");
+}
+
 /* ---------- controls ---------- */
 function metricSeg(){
   document.getElementById("metricSeg").innerHTML = R.map(r=>
@@ -439,7 +544,7 @@ document.getElementById("sub").textContent =
   `${DATA.teams.length} teams · ${N} snapshots (${L[0]} → ${L[N-1]})`;
 document.getElementById("gen").textContent = "generated "+DATA.generated;
 document.getElementById("latlbl").textContent = "· "+L[N-1];
-metricSeg(); kpis(); draw(); legend(); movers(); market(); table();
+metricSeg(); kpis(); draw(); legend(); movers(); market(); table(); renderGroups();
 window.addEventListener("resize", ()=>{});
 </script>
 </body></html>
