@@ -34,8 +34,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 sys.path.insert(0, os.path.join(ROOT, "backtest"))
 import wc2026 as E
-from wc2026.goals_model import GoalsModel, fit as fit_goals
+from wc2026.goals_model import GoalsModel, fit as fit_goals, time_decay_weights
 
+HALF_LIFE_YEARS = 2.0   # time-decay weighting for the goals-model fit; 0 disables (equal weighting)
 ELO_CSV   = os.path.join(ROOT, "wc2026_elo.csv")
 PARAMS    = os.path.join(ROOT, "params", "goals_params.json")
 ODDS_CHAMP = os.path.join(ROOT, "data", "odds_champion.csv")
@@ -116,11 +117,13 @@ def step_fit_goals_model():
         eh, ea = B.rolling_elo(real, k=60.0, home_adv=60.0)
         d = eh - ea
         hf = (~real["neutral"].values).astype(float)
-        model = fit_goals(d, hf, real["hg"].values, real["ag"].values)
+        w = time_decay_weights(real["date"], HALF_LIFE_YEARS)
+        model = fit_goals(d, hf, real["hg"].values, real["ag"].values, weights=w)
         os.makedirs(os.path.dirname(PARAMS), exist_ok=True)
         model.save(PARAMS)
         implied = 400.0 * np.log(10.0) / (2.0 * model.gamma)
-        print(f"  fitted on {len(real)} real matches; saved -> {os.path.relpath(PARAMS, ROOT)}")
+        hl = f"{HALF_LIFE_YEARS:g}y time-decay" if HALF_LIFE_YEARS else "equal weighting"
+        print(f"  fitted on {len(real)} real matches ({hl}); saved -> {os.path.relpath(PARAMS, ROOT)}")
         print(f"    mu={model.mu:+.3f}  gamma={model.gamma:.3f} (GOAL_SCALE~{implied:.0f})  "
               f"home_elo={model.home_elo:.0f}  rho={model.rho:+.3f}")
         return model, f"MLE fit on real internationals ({dt.date.today()})"

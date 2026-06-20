@@ -31,7 +31,8 @@ from .elo_dynamics import (apply_known_results, _deterministic_groups,
                            _update_elo_from_ko)
 
 # --- calibrated Dixon-Coles goals model (optional upgrade for the match engine) ---
-from .goals_model import GoalsModel, fit as fit_goals_model, negloglik as goals_negloglik
+from .goals_model import (GoalsModel, fit as fit_goals_model, negloglik as goals_negloglik,
+                          time_decay_weights)
 
 # --- model + market blending ---
 from .blend import (blend_linear, blend_logpool, optimize_blend_weight,

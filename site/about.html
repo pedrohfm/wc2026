@@ -76,9 +76,10 @@ low-score correction — a dependence parameter ρ that restores the empirical f
 which the independent-Poisson benchmark understates. Goal intensities follow a log-linear link,
 <code>log λ = μ ± γ·d/400</code>, where <code>d</code> is the rating differential inclusive of the home term.
 The four parameters are estimated by maximum likelihood (L-BFGS-B) on approximately 23,275
-international fixtures since 2002. Current estimates:
-<span class="kbd">μ = 0.195</span><span class="kbd">γ = 0.728 (≈ GOAL_SCALE 633)</span>
-<span class="kbd">home = 112 Elo</span><span class="kbd">ρ = -0.046</span>.</p>
+international fixtures since 2002, under exponential time-decay weighting (approximately a two-year
+half-life) so that recent results — reflecting current squads — carry greater weight. Current estimates:
+<span class="kbd">μ = 0.177</span><span class="kbd">γ = 0.704 (≈ GOAL_SCALE 654)</span>
+<span class="kbd">home = 97 Elo</span><span class="kbd">ρ = -0.050</span>.</p>
 <h3>3 · Tournament simulation (Monte Carlo)</h3>
 <p>Each of the 104 fixtures is sampled from its estimated scoreline distribution; the group stage, the
 allocation of the eight best third-placed teams, and the knockout bracket are resolved exactly per the
@@ -165,5 +166,5 @@ performance and out-of-sample diagnostics are not guarantees of future results.<
 <div class="foot">© 2026 <b>Pedro Henrique Figueiredo Magalhães</b>. Model design, implementation, analysis,
 and documentation by Pedro Henrique Figueiredo Magalhães. All rights reserved. Data © their respective
 providers (see above).<br>
-Last generated 2026-06-20 09:00.</div>
+Last generated 2026-06-20 16:18.</div>
 </div></body></html>

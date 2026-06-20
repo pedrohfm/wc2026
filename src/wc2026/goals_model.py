@@ -115,7 +115,7 @@ class GoalsModel:
 # MAXIMUM-LIKELIHOOD FIT  (the Dixon-Coles likelihood, specialised to one Elo
 # rating per team + a fitted home effect)
 # ----------------------------------------------------------------------------
-def negloglik(params, d, home_flag, hg, ag, kmax=8):
+def negloglik(params, d, home_flag, hg, ag, kmax=8, weights=None):
     mu, gamma, home_elo, rho = params
     d_eff = d + home_elo * home_flag
     la = np.exp(mu + gamma * d_eff / 400.0)
@@ -130,6 +130,8 @@ def negloglik(params, d, home_flag, hg, ag, kmax=8):
     m10 = (hg == 1) & (ag == 0); tau[m10] = 1.0 + lb[m10] * rho
     m11 = (hg == 1) & (ag == 1); tau[m11] = 1.0 - rho
     ll = ll + np.log(np.clip(tau, 1e-9, None))
+    if weights is not None:
+        ll = ll * weights        # exponential time-decay etc. (Dixon-Coles 1997)
     return -np.sum(ll)
 
 
@@ -138,17 +140,33 @@ def _lgamma_arr(k):
     return _LGAMMA(k)
 
 
-def fit(d, home_flag, hg, ag, x0=None):
+def time_decay_weights(dates, half_life_years=2.0, ref=None):
+    """Exponential time-decay weights for the MLE: recent matches count more.
+       half_life_years<=0 returns equal weights (i.e. disables decay). The most
+       recent match gets weight 1; a match one half-life older gets weight 0.5."""
+    import pandas as pd
+    if not half_life_years or half_life_years <= 0:
+        return np.ones(len(dates))
+    d = pd.to_datetime(pd.Series(list(dates)))
+    ref = d.max() if ref is None else pd.to_datetime(ref)
+    age_days = (ref - d).dt.days.clip(lower=0).to_numpy(dtype=float)
+    return np.exp(-math.log(2.0) * age_days / (half_life_years * 365.25))
+
+
+def fit(d, home_flag, hg, ag, x0=None, weights=None):
     """Fit (mu, gamma, home_elo, rho) by MLE. Returns a GoalsModel.
-       d: elo_home - elo_away (pre-match);  home_flag: 1 if non-neutral home."""
+       d: elo_home - elo_away (pre-match);  home_flag: 1 if non-neutral home.
+       weights: optional per-match weights (e.g. time decay); None = unweighted."""
     d = np.asarray(d, float); home_flag = np.asarray(home_flag, float)
     hg = np.asarray(hg, int); ag = np.asarray(ag, int)
+    if weights is not None:
+        weights = np.asarray(weights, float)
     if x0 is None:
         x0 = np.array([DEFAULT_MU, DEFAULT_GAMMA, DEFAULT_HOME_ELO, 0.0])
     bounds = [(-1.0, 1.5), (0.0, 3.0), (-150.0, 300.0), (-0.30, 0.30)]
     try:
         from scipy.optimize import minimize
-        r = minimize(negloglik, x0, args=(d, home_flag, hg, ag),
+        r = minimize(negloglik, x0, args=(d, home_flag, hg, ag, 8, weights),
                      method="L-BFGS-B", bounds=bounds)
         p = r.x
     except Exception:
