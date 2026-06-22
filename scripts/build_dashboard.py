@@ -134,21 +134,22 @@ def build_data():
 
 def main():
     data = build_data()
+    # PRIMARY for the live site: the Claude-Design pages read window.WC_DATA from
+    # this file, so it is regenerated with fresh data every run.
+    with open(os.path.join(OUT, "WCData.js"), "w") as f:
+        f.write("window.WC_DATA = " + json.dumps(data) + ";\n")
+    print(f"  WCData.js -> outputs/WCData.js  ({len(data['teams'])} teams, "
+          f"{len(data['labels'])} snapshots, generated {data['generated']})")
+
+    # Legacy self-contained dashboard (kept as an offline fallback; not deployed
+    # when the new design is present).
     html = TEMPLATE.replace("/*DATA*/", json.dumps(data))
-    out = os.path.join(OUT, "dashboard.html")
-    with open(out, "w") as f:
-        f.write(html)
-    # also write index.html so the nav links (which target index.html, as on the
-    # deployed site) resolve when opening the files locally too
-    with open(os.path.join(OUT, "index.html"), "w") as f:
-        f.write(html)
-    print(f"  dashboard -> {os.path.relpath(out, ROOT)} (+ index.html)  "
-          f"({len(data['teams'])} teams, {len(data['labels'])} snapshots)")
-    ab = os.path.join(OUT, "about.html")
-    with open(ab, "w") as f:
+    for name in ("dashboard.html", "index.html"):
+        with open(os.path.join(OUT, name), "w") as f:
+            f.write(html)
+    with open(os.path.join(OUT, "about.html"), "w") as f:
         f.write(build_about(data))
-    print(f"  about     -> {os.path.relpath(ab, ROOT)}")
-    print("  open dashboard.html in a browser.")
+    print("  legacy fallback -> outputs/dashboard.html, about.html")
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0}
+  body{background:#edf1f6;color:#0f1729;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  *{box-sizing:border-box}
+  ::selection{background:#cf2e2e;color:#fff}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="--bg:#edf1f6;--paper:#ffffff;--ink:#0f1729;--mut:#64748b;--line:#e2e8f0;--soft:#f1f5f9;--accent:#2563eb;--pos:#0e9f6e;min-height:100vh;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <div style="max-width:820px;margin:0 auto;padding:24px 22px 80px">
+
+    <header style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px">
+      <span style="font-family:Newsreader;font-weight:600;font-size:18px;letter-spacing:-.01em">World Cup 2026</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:11px">
+        <nav style="display:flex;gap:6px;align-items:center">
+          <a href="index.html" style="font:700 12px Inter;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;color:var(--mut);padding:8px 15px;border-radius:9px">Tracker</a>
+          <a href="methodology.html" style="font:700 12px Inter;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;color:var(--paper);background:var(--ink);padding:8px 15px;border-radius:9px">Methodology</a>
+        </nav>
+      </div>
+    </header>
+
+    <div style="font:700 11px Inter;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-top:28px">FIFA World Cup 2026 · Quantitative forecast</div>
+    <h1 style="font-family:Newsreader;font-weight:500;font-size:clamp(34px,6vw,50px);line-height:1.02;letter-spacing:-.02em;margin:12px 0 0">Methodology &amp; disclosure</h1>
+    <p style="color:var(--mut);font-size:16px;line-height:1.7;max-width:680px;margin:18px 0 0;text-wrap:pretty">A documented, out-of-sample-validated probabilistic model of the 2026 FIFA World Cup. This note sets out the data inputs, estimation procedure, validation results, assumptions, and limitations in full, so that the construction and the performance of the forecast can be assessed independently.</p>
+
+    <div style="background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:14px;padding:20px 24px;margin:26px 0;box-shadow:0 1px 2px rgba(20,18,12,.04),0 14px 34px -24px rgba(20,18,12,.22);font-size:15px;line-height:1.75;color:#33312c">
+      <b style="color:var(--ink)">Summary.</b> Each national team is assigned a single latent strength rating (Elo). For a given fixture, the rating differential is mapped to a joint distribution over scorelines through a bivariate-Poisson (Dixon–Coles) specification whose parameters are estimated by maximum likelihood on historical results. The complete 104-match tournament — group stage, qualification of the eight best third-placed teams, and the knockout bracket — is evaluated by Monte Carlo simulation over 10,000 paths, producing each team's probability of reaching every stage and of winning the tournament. Because regulated betting markets aggregate information not available to the model, the championship distribution is additionally combined with the de-vigged market through a weighted opinion pool. Out-of-sample performance statistics are recomputed and disclosed on every run.
+    </div>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Interpreting the output</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">All figures are probabilities, not point predictions. A value of 18% for a given team denotes that the team prevailed in approximately 18% of simulated tournaments; it is not an assertion that the team will or will not win. In a 48-team single-elimination format the outcome carries high entropy, and even the strongest entrant rarely exceeds approximately 20%. The informative content therefore resides in the full predictive distribution and, critically, in its calibration: when the model assigns 20%, the event should occur in approximately 20% of cases. Calibration is evidenced in the validation section below. Movements of a few tenths of a percentage point between runs reflect Monte Carlo sampling error rather than a material change in the forecast.</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Data inputs and variables</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">The forecast is driven by a single strength factor together with the fixed tournament structure. Additional variables were evaluated as candidate predictors or are used solely as an external benchmark, as set out below.</p>
+    {{ inputsTable }}
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Methodology</h2>
+
+    <h3 style="font-family:Inter;font-size:14px;font-weight:700;letter-spacing:.02em;margin:1.6em 0 .3em;color:var(--accent)">1 · Strength estimation (Elo)</h3>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">Each team carries a rating that updates after every observed match by <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px">K · G · (result − expected)</span>, where the expected result is the logistic function of the rating differential and <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px">G</span> weights the revision by margin of victory. The rating is the model's sole measure of team quality. During the tournament, ratings are revised from completed fixtures, so the forecast is re-priced as matches are played.</p>
+
+    <h3 style="font-family:Inter;font-size:14px;font-weight:700;letter-spacing:.02em;margin:1.6em 0 .3em;color:var(--accent)">2 · Match model (Dixon–Coles, maximum likelihood)</h3>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">Each fixture is represented by two goal counts modelled as Poisson processes with the Dixon–Coles (1997) low-score correction — a dependence parameter ρ that restores the empirical frequency of low-scoring draws, which the independent-Poisson benchmark understates. Goal intensities follow a log-linear link, <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px">log λ = μ ± γ·d/400</span>, where <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px">d</span> is the rating differential inclusive of the home term. The four parameters are estimated by maximum likelihood (L-BFGS-B) on approximately 23,275 international fixtures since 2002, under exponential time-decay weighting (approximately a two-year half-life) so that recent results — reflecting current squads — carry greater weight.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 11px">μ = 0.177</span>
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 11px">γ = 0.704 (≈ GOAL_SCALE 654)</span>
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 11px">home = 97 Elo</span>
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 11px">ρ = -0.050</span>
+    </div>
+
+    <h3 style="font-family:Inter;font-size:14px;font-weight:700;letter-spacing:.02em;margin:1.6em 0 .3em;color:var(--accent)">3 · Tournament simulation (Monte Carlo)</h3>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">Each of the 104 fixtures is sampled from its estimated scoreline distribution; the group stage, the allocation of the eight best third-placed teams, and the knockout bracket are resolved exactly per the official format; and the champion is recorded. Ten thousand independent paths convert match-level probabilities into stage-by-stage and championship probabilities, each reported with its Monte Carlo standard error.</p>
+
+    <h3 style="font-family:Inter;font-size:14px;font-weight:700;letter-spacing:.02em;margin:1.6em 0 .3em;color:var(--accent)">4 · Combination with the market</h3>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">The outright market, de-vigged using the Shin (1992) method — which removes the bookmaker margin while correcting the favourite–longshot bias that simple proportional normalisation leaves in — is combined with the model through a weighted opinion pool (default 70% market, 30% model). Because the two sources err on partially independent information sets, the combination attains lower out-of-sample loss than either constituent alone.</p>
+
+    <h3 style="font-family:Inter;font-size:14px;font-weight:700;letter-spacing:.02em;margin:1.6em 0 .3em;color:var(--accent)">5 · Variable selection (ordered logit, walk-forward cross-validation)</h3>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">To assess whether additional variables carry information beyond the rating, an ordered-logit Win/Draw/Loss model is estimated by maximum likelihood and each candidate is scored by its <i>incremental</i> out-of-sample log loss relative to an Elo-only specification, under expanding-window (walk-forward) cross-validation with paired-bootstrap confidence intervals. No candidate produced a statistically distinguishable improvement (see Limitations).</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Out-of-sample validation</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">Performance is assessed strictly out of sample: parameters are estimated on fixtures prior to 2022-01-01 and evaluated on the 4,572 international fixtures played subsequently. Lower log loss, Brier score, and ranked probability score (RPS) indicate better probabilistic accuracy; accuracy is the share of Win/Draw/Loss outcomes correctly assigned the highest probability. Benchmarks are a uniform (no-information) forecast, the empirical base rate, and a parsimonious Elo-only ordered-logit specification.</p>
+    {{ validTable }}
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">On the held-out sample, the model reduces log loss by approximately 20% relative to the uniform benchmark and 16% relative to the empirical base rate (McFadden pseudo-R² ≈ 0.16), and is well calibrated, with an expected calibration error of 0.025. Its discriminative performance is statistically indistinguishable from the Elo-only benchmark; the additional structure of the scoreline model is therefore justified by its role in resolving group-stage tie-breakers and bracket progression rather than by superior match-level discrimination. Calibration is corroborated by a reliability analysis under six-fold expanding-window cross-validation.</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Assumptions</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">The framework assumes that goals follow a Poisson/Dixon–Coles law; that team quality is adequately summarised by a single rating; that the rating differential maps log-linearly to goal intensities; that fixtures are conditionally independent given ratings; that team strength is fixed within a tournament apart from results-driven revisions and a single per-tournament rating-uncertainty draw; that home advantage is additive in the rating and confined to host nations; that penalty shoot-outs are approximately symmetric with a small skill component; and that the relationship estimated over 2002 to the present is stationary through 2026.</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Limitations and scope</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">The model is deliberately constrained to a single latent strength factor and consequently incorporates less information than regulated betting markets, which price squad availability, team selection, recent form, and order flow. It should therefore be expected to track, rather than to outperform, an efficient closing price, and it exhibits mild over-concentration on the highest-rated entrants. Several extensions intended to relax the single-factor constraint were evaluated and did not improve out-of-sample performance: a friendly-adjusted scoreline fit, a match-importance interaction, and squad market value — the last approximately 0.80 correlated with the rating, with no measurable signal in its orthogonal component. The tournament-level rating-uncertainty parameter could not be identified from match-level data. Only the incorporation of external information, through the market blend, produced a measurable improvement. These negative results are disclosed rather than omitted.</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Data sources and attribution</h2>
+    {{ sources }}
+    <p style="color:var(--mut);font-size:14px;line-height:1.7;text-wrap:pretty">All datasets remain the property of their respective providers and are used here for non-commercial research purposes. The project is independent and is not affiliated with, authorised by, or endorsed by FIFA, the data providers, or any bookmaker. Methodological lineage: Elo (1978); Dixon &amp; Coles, <i>Applied Statistics</i> (1997); and the probabilistic scoring rules of Brier (1950) and Epstein (1969).</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Reproducibility</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">The full pipeline — data ingestion, leakage-free rating, maximum-likelihood estimation, simulation, backtesting, and the generation of this site — is fully scripted and covered by an automated test suite. The methodology, the validation diagnostics, and the complete record of specifications evaluated and rejected are maintained alongside the source code.</p>
+
+    <h2 style="font-family:Newsreader;font-weight:500;font-size:25px;letter-spacing:-.01em;margin:2em 0 .4em;padding-bottom:9px;border-bottom:1px solid var(--line)">Disclaimer</h2>
+    <p style="font-size:15.5px;line-height:1.8;color:#33312c;text-wrap:pretty">This material is provided for informational and educational purposes only. It does not constitute financial, investment, or betting advice, nor an offer or solicitation to enter into any transaction. Past performance and out-of-sample diagnostics are not guarantees of future results.</p>
+
+    <footer style="color:var(--mut);font-size:13px;line-height:1.7;margin-top:34px;border-top:1px solid var(--line);padding-top:18px;text-wrap:pretty">© 2026 <b style="color:var(--ink)">Pedro Henrique Figueiredo Magalhães</b>. Model design, implementation, analysis, and documentation by Pedro Henrique Figueiredo Magalhães. All rights reserved. Data © their respective providers (see above).<br>Last generated 2026-06-22 11:03. &nbsp;·&nbsp; <a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:600">← Back to the tracker</a></footer>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:820,&quot;height&quot;:1000}}">
+const THEMES={
+  broadsheet:{bg:"#f3f1ea",paper:"#fffdf8",ink:"#1a1a1f",mut:"#6f6a5f",line:"#e6e1d3",soft:"#f6f3ea",accent:"#cf2e2e",pos:"#1f8a4c"},
+  signal:{bg:"#edf1f6",paper:"#ffffff",ink:"#0f1729",mut:"#64748b",line:"#e2e8f0",soft:"#f1f5f9",accent:"#2563eb",pos:"#0e9f6e"},
+  pitch:{bg:"#eef1ec",paper:"#ffffff",ink:"#15241b",mut:"#5e6b62",line:"#dde4dd",soft:"#eef3ed",accent:"#0f8a4f",pos:"#0f8a4f"}
+};
+const INPUTS=[
+  ["Elo rating (per team)","latent team strength; updated from in-tournament results","Primary input"],
+  ["Host advantage","Elo adjustment for host nations on home soil","Applied (capped at +60 Elo)"],
+  ["Live match results","fix completed fixtures, re-estimate, re-simulate the remainder","Applied as entered"],
+  ["Market-implied probabilities","external benchmark and blend counterpart","Benchmark and blend only"],
+  ["Squad market value","candidate predictor (Transfermarkt)","Evaluated; no incremental signal"],
+  ["Rest days, match importance","candidate predictors","Evaluated; no incremental signal"]
+];
+const VALID=[
+  ["Coin (⅓ each)","1.0986","0.6667","0.4791","48%",false],
+  ["Base rate (no skill)","1.0502","0.6333","0.4566","48%",false],
+  ["Elo-logistic","0.8802","0.5177","0.3457","60%",false],
+  ["Model (Elo + DC-MLE)","0.8802","0.5180","0.3460","60%",true]
+];
+const SOURCES=[
+  ["Match results","historical international results since 1872, community-maintained by Mart Jürisoo.","github.com/martj42","https://github.com/martj42/international_results"],
+  ["Elo ratings","World Football Elo Ratings (pre-tournament team strengths).","eloratings.net","https://www.eloratings.net/"],
+  ["Squad market values","Transfermarkt national-team valuations (tested as a feature).","transfermarkt.com","https://www.transfermarkt.com/"],
+  ["Betting odds","The Odds API, aggregating major bookmakers (blend & benchmark).","the-odds-api.com","https://the-odds-api.com/"]
+];
+
+class Component extends DCLogic {
+  constructor(p){ super(p); this.rootRef=React.createRef(); this.state={theme:"signal"}; }
+  componentDidMount(){ this.applyTheme(); }
+  componentDidUpdate(prev){ if(prev.theme!==this.state.theme) this.applyTheme(); }
+  applyTheme(){ const t=THEMES[this.state.theme]||THEMES.broadsheet; const r=this.rootRef.current; if(r){ const m={"--bg":t.bg,"--paper":t.paper,"--ink":t.ink,"--mut":t.mut,"--line":t.line,"--soft":t.soft,"--accent":t.accent,"--pos":t.pos}; Object.keys(m).forEach(k=>r.style.setProperty(k,m[k])); } try{document.body.style.background=t.bg;}catch(e){} }
+  setTheme(n){ try{localStorage.setItem("wc-theme",n);}catch(e){} this.setState({theme:n}); }
+
+  buildThemeSwitch(){ const h=React.createElement; const opts=[["broadsheet","Broadsheet"],["signal","Signal"],["pitch","Pitch"]];
+    return h("div",{style:{display:"inline-flex",gap:4,alignItems:"center"}},
+      h("span",{style:{font:"600 10px Inter",letterSpacing:".12em",textTransform:"uppercase",color:"var(--mut)",marginRight:2}},"Theme"),
+      opts.map(o=>h("button",{key:o[0],onClick:()=>this.setTheme(o[0]),style:{cursor:"pointer",border:"1px solid var(--line)",background:this.state.theme===o[0]?"var(--ink)":"var(--paper)",color:this.state.theme===o[0]?"var(--paper)":"var(--mut)",borderRadius:7,padding:"5px 9px",font:"600 11px Inter",transition:"all .15s"}},o[1]))); }
+
+  buildInputs(){ const h=React.createElement; const th={padding:"10px 12px",textAlign:"left",font:"600 10.5px Inter",letterSpacing:".05em",textTransform:"uppercase",color:"var(--mut)",borderBottom:"2px solid var(--line)"};
+    return h("div",{style:{overflow:"auto",margin:"14px 0 4px"}},h("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:14}},
+      h("thead",{},h("tr",{},h("th",{style:th},"Variable"),h("th",{style:th},"Role"),h("th",{style:th},"Status"))),
+      h("tbody",{},INPUTS.map((r,i)=>h("tr",{key:i,style:{borderBottom:"1px solid var(--line)"}},
+        h("td",{style:{padding:"10px 12px",fontWeight:600,color:"var(--ink)",verticalAlign:"top"}},r[0]),
+        h("td",{style:{padding:"10px 12px",color:"#33312c",lineHeight:1.55}},r[1]),
+        h("td",{style:{padding:"10px 12px",color:"var(--mut)",whiteSpace:"nowrap",verticalAlign:"top"}},r[2])))))); }
+
+  buildValid(){ const h=React.createElement; const th={padding:"10px 12px",textAlign:"right",font:"600 10.5px Inter",letterSpacing:".05em",textTransform:"uppercase",color:"var(--mut)",borderBottom:"2px solid var(--line)"};
+    return h("div",{style:{overflow:"auto",margin:"14px 0"}},h("table",{style:{width:"100%",borderCollapse:"collapse",fontSize:14,fontVariantNumeric:"tabular-nums"}},
+      h("thead",{},h("tr",{},h("th",{style:Object.assign({},th,{textAlign:"left"})},"Specification"),h("th",{style:th},"Log loss"),h("th",{style:th},"Brier"),h("th",{style:th},"RPS"),h("th",{style:th},"Accuracy"))),
+      h("tbody",{},VALID.map((r,i)=>h("tr",{key:i,style:{borderBottom:"1px solid var(--line)",background:r[5]?"color-mix(in srgb,var(--accent) 6%,transparent)":"transparent"}},
+        h("td",{style:{padding:"10px 12px",textAlign:"left",fontWeight:r[5]?700:500,color:r[5]?"var(--ink)":"#33312c"}},r[0]),
+        h("td",{style:{padding:"10px 12px",textAlign:"right",fontWeight:r[5]?700:500}},r[1]),
+        h("td",{style:{padding:"10px 12px",textAlign:"right"}},r[2]),
+        h("td",{style:{padding:"10px 12px",textAlign:"right"}},r[3]),
+        h("td",{style:{padding:"10px 12px",textAlign:"right",fontWeight:600,color:r[5]?"var(--accent)":"var(--ink)"}},r[4])))))); }
+
+  buildSources(){ const h=React.createElement;
+    return h("div",{style:{background:"var(--paper)",border:"1px solid var(--line)",borderRadius:14,padding:"6px 22px",margin:"12px 0",boxShadow:"0 1px 2px rgba(20,18,12,.04),0 14px 34px -24px rgba(20,18,12,.22)"}},
+      SOURCES.map((s,i)=>h("div",{key:i,style:{display:"flex",justifyContent:"space-between",gap:14,alignItems:"baseline",padding:"13px 0",borderBottom:i<SOURCES.length-1?"1px solid var(--line)":"none"}},
+        h("span",{style:{fontSize:14.5,lineHeight:1.5,color:"#33312c"}},h("b",{style:{color:"var(--ink)"}},s[0]),"  — ",s[1]),
+        h("a",{href:s[3],target:"_blank",rel:"noopener",style:{color:"var(--accent)",textDecoration:"none",fontWeight:600,fontSize:13.5,whiteSpace:"nowrap",flex:"none"}},s[2])))); }
+
+  renderVals(){ return { rootRef:this.rootRef, inputsTable:this.buildInputs(), validTable:this.buildValid(), sources:this.buildSources() }; }
+}
+</script>
+</body>
+</html>
