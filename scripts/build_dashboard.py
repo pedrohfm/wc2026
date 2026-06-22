@@ -228,7 +228,7 @@ td.team,th.team{text-align:left}
 .cellv .num{font-size:11.5px;color:var(--ink)}
 .cellv .bt{height:4px;width:100%;background:#eef2f7;border-radius:2px;position:relative;overflow:hidden}
 .cellv .bt > i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;opacity:.9}
-.flag{font-size:14px;margin-right:7px;vertical-align:-1px}
+.flag{width:20px;height:15px;border-radius:2px;margin-right:7px;vertical-align:-2px;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.07)}
 .chip{font-size:10.5px;padding:2px 9px;border-radius:20px;font-weight:500}
 .up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--mut)}
 .tablewrap{max-height:560px;overflow:auto;border-radius:10px}
@@ -242,20 +242,24 @@ td.team,th.team{text-align:left}
 .mrow{display:flex;align-items:center;gap:6px}
 .mrow > i{height:9px;border-radius:3px;display:block;min-width:2px}
 .mrow > span{font-size:11px;color:var(--mut);width:34px;flex:none;text-align:right}
-/* group-stage tile */
-.gmkey{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin:0 4px 0 10px}
-.gmgrp{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:16px 0 4px}
-.gmrow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+/* group-stage tile (fully responsive: stacked rows, full-width bars) */
+.gmkey{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin:0 3px 0 6px}
+.gmlegend{display:flex;flex-wrap:wrap;gap:6px 4px;font-size:12px;color:var(--mut);margin:2px 0 10px}
+.gmgrp{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:16px 0 6px}
+.gmrow{padding:9px 0;border-bottom:1px solid var(--line)}
 .gmrow:last-child{border-bottom:0}
-.gmteams{width:290px;flex:none;font-size:12.5px;display:flex;align-items:center;gap:6px}
-.gmteams .vs{color:var(--mut);font-size:11px;margin:0 3px}
-.gmbar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:#eef2f7}
-.gmbar > span{display:block;height:100%}
-.gmmkt{height:6px;margin-top:3px;opacity:.85}
-.gmnums{width:104px;flex:none;font-size:11px;color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
-.gmright{width:96px;flex:none;text-align:right}
+.gmhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.gmhead .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;display:flex;align-items:center;gap:2px}
+.gmhead .t .vs{color:var(--mut);font-size:11px;margin:0 4px;flex:none}
+.gmhead .r{flex:none;display:flex;align-items:center;gap:8px}
+.gmline{display:flex;align-items:center;gap:8px;margin-top:4px}
+.gmline .lab{width:54px;flex:none;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.gmbar2{flex:1;min-width:0;display:flex;height:13px;border-radius:4px;overflow:hidden;background:#eef2f7}
+.gmbar2 > span{display:block;height:100%}
+.gmpct{flex:none;width:92px;text-align:right;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
 .gmchip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
-@media(max-width:600px){.gmteams{width:130px;font-size:11.5px}.gmnums{display:none}.gmright{width:64px}}
+.gmspark{flex:none}
+@media(max-width:600px){.gmpct{width:78px}.gmline .lab{width:46px}.gmspark{display:none}}
 </style></head>
 <body><div class="wrap">
   <div class="mast">
@@ -309,12 +313,14 @@ td.team,th.team{text-align:left}
   <div class="card" id="gmcard" style="display:none;margin-top:16px">
     <div class="sec" style="margin-bottom:10px">Group-stage matches
       <span class="sub">model &amp; market win / draw / loss, with results as they come in</span></div>
-    <div class="controls">
-      <label class="lbl">Group</label><select id="gmsel"></select>
-      <span class="sub" style="margin-left:auto">
-        <span class="gmkey" style="background:#2563eb"></span>home win
+    <div class="controls"><label class="lbl">Group</label><select id="gmsel"></select></div>
+    <div class="gmlegend">
+      <span><b>Model</b>&nbsp; <span class="gmkey" style="background:#2563eb"></span>home
         <span class="gmkey" style="background:#94a3b8"></span>draw
-        <span class="gmkey" style="background:#d97706"></span>away win</span>
+        <span class="gmkey" style="background:#d97706"></span>away</span>
+      <span style="margin-left:14px"><b>Market</b>&nbsp; <span class="gmkey" style="background:#0d9488"></span>home
+        <span class="gmkey" style="background:#cbd5e1"></span>draw
+        <span class="gmkey" style="background:#db2777"></span>away</span>
     </div>
     <div id="gmlist"></div>
   </div>
@@ -341,11 +347,14 @@ const ISO = {Mexico:"MX",Canada:"CA","United States":"US",Haiti:"HT","Curaçao":
  Senegal:"SN",Algeria:"DZ","DR Congo":"CD",Ghana:"GH",Czechia:"CZ",Switzerland:"CH",
  "Bosnia & Herzegovina":"BA","Türkiye":"TR",Germany:"DE",Netherlands:"NL",Sweden:"SE",Belgium:"BE",
  Spain:"ES",France:"FR",Norway:"NO",Austria:"AT",Portugal:"PT",Croatia:"HR","New Zealand":"NZ"};
-const _ENG=String.fromCodePoint(0x1F3F4,0xE0067,0xE0062,0xE0065,0xE006E,0xE0067,0xE007F);
-const _SCO=String.fromCodePoint(0x1F3F4,0xE0067,0xE0062,0xE0073,0xE0063,0xE0074,0xE007F);
-function flag(t){ if(t==="England")return _ENG; if(t==="Scotland")return _SCO;
-  const c=ISO[t]; return c? c.replace(/./g,ch=>String.fromCodePoint(127397+ch.charCodeAt(0))) : ""; }
-function nm(t){ const f=flag(t); return (f?`<span class="flag">${f}</span>`:"")+t; }
+// Flag IMAGES (cross-platform: emoji flags don't render on Windows). flagcdn
+// supports subdivisions (gb-eng, gb-sct). onerror removes a broken img so it
+// degrades to just the team name (e.g. offline).
+const FLAGC = Object.assign({}, ISO, {England:"gb-eng", Scotland:"gb-sct"});
+function flagImg(t){ const c=FLAGC[t]; if(!c) return "";
+  const lc=c.toLowerCase();
+  return `<img class="flag" src="https://flagcdn.com/40x30/${lc}.png" srcset="https://flagcdn.com/80x60/${lc}.png 2x" width="20" height="15" loading="lazy" alt="" onerror="this.remove()">`; }
+function nm(t){ return flagImg(t)+t; }
 const R = DATA.rounds, L = DATA.labels, N = L.length;
 const state = {metric:"Win", mode:"prob", topN:8, sort:"Win", dir:1, hi:null, search:""};
 
@@ -497,12 +506,18 @@ function table(){
 }
 
 /* ---------- group-stage matches ---------- */
-const GHW="#2563eb",GDR="#94a3b8",GAW="#d97706";
+const MOD={h:"#2563eb",d:"#94a3b8",a:"#d97706"};   // model colours
+const MKT={h:"#0d9488",d:"#cbd5e1",a:"#db2777"};   // market colours (distinct set)
 function gspark(arr){
   if(!arr||arr.length<2) return "";
-  const w=68,h=18; const x=i=>i/(arr.length-1)*w; const y=v=>h-2-(Math.max(0,Math.min(100,v))/100)*(h-4);
+  const w=62,h=16; const x=i=>i/(arr.length-1)*w; const y=v=>h-2-(Math.max(0,Math.min(100,v))/100)*(h-4);
   const d=arr.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
-  return `<svg width="${w}" height="${h}" style="vertical-align:middle" aria-hidden="true"><path d="${d}" fill="none" stroke="${GHW}" stroke-width="1.5"/></svg>`;
+  return `<svg class="gmspark" width="${w}" height="${h}" style="vertical-align:middle" aria-hidden="true"><path d="${d}" fill="none" stroke="${MOD.h}" stroke-width="1.5"/></svg>`;
+}
+function gmBar(lab, h, dd, a, C){
+  return `<div class="gmline"><span class="lab">${lab}</span>
+    <div class="gmbar2"><span style="width:${h}%;background:${C.h}"></span><span style="width:${dd}%;background:${C.d}"></span><span style="width:${a}%;background:${C.a}"></span></div>
+    <span class="gmpct">${(+h).toFixed(0)} / ${(+dd).toFixed(0)} / ${(+a).toFixed(0)}</span></div>`;
 }
 function paintGroups(g){
   const rows=DATA.gm.rows.filter(r=>g==="ALL"||r.group===g);
@@ -511,18 +526,15 @@ function paintGroups(g){
   Object.keys(byG).sort().forEach(grp=>{
     html+=`<div class="gmgrp">Group ${grp}</div>`;
     byG[grp].forEach(r=>{
-      const bar=`<div class="gmbar"><span style="width:${r.m_home}%;background:${GHW}"></span><span style="width:${r.m_draw}%;background:${GDR}"></span><span style="width:${r.m_away}%;background:${GAW}"></span></div>`;
       const hasM = r.mkt_home!=="" && r.mkt_home!=null;
-      const mkt = hasM ? `<div class="gmbar gmmkt"><span style="width:${r.mkt_home}%;background:${GHW}"></span><span style="width:${r.mkt_draw}%;background:${GDR}"></span><span style="width:${r.mkt_away}%;background:${GAW}"></span></div>` : "";
       let right;
-      if(r.played){ const oc=r.actual, col=oc==="H"?GHW:(oc==="A"?GAW:GDR);
+      if(r.played){ const oc=r.actual, col=oc==="H"?MOD.h:(oc==="A"?MOD.a:MOD.d);
         right=`<span class="gmchip" style="background:${col}22;color:${col}">FT ${r.score}</span>`; }
       else right=gspark(DATA.gm.hist[String(r.match)]);
       html+=`<div class="gmrow">
-        <div class="gmteams">${nm(r.home)}<span class="vs">v</span>${nm(r.away)}</div>
-        <div style="flex:1;min-width:80px">${bar}${mkt}</div>
-        <div class="gmnums">${r.m_home} / ${r.m_draw} / ${r.m_away}</div>
-        <div class="gmright">${right}</div></div>`;
+        <div class="gmhead"><div class="t">${nm(r.home)}<span class="vs">v</span>${nm(r.away)}</div><div class="r">${right}</div></div>
+        ${gmBar("Model", r.m_home, r.m_draw, r.m_away, MOD)}
+        ${hasM ? gmBar("Market", r.mkt_home, r.mkt_draw, r.mkt_away, MKT) : ""}</div>`;
     });
   });
   document.getElementById("gmlist").innerHTML=html;
