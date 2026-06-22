@@ -72,17 +72,20 @@ def compare_to_market(model_df, market=MARKET_ODDS, kind="decimal", col="Win", d
        Edge(pp) = model% - market%.  Edge_x = model/market (>1 => model sees value).
        NOTE: de-vig normalises over the teams you provide, so include the full
        realistic contender set or the market column will be slightly inflated."""
+    from .blend import shin_devig
     if kind == "decimal": imp = {t: 1.0 / o for t, o in market.items()}
     elif kind == "implied_pct": imp = {t: o / 100.0 for t, o in market.items()}
     else: imp = dict(market)
     s = sum(imp.values()); overround = (s - 1) * 100
+    # Shin (1992) margin removal for decimal odds; proportional fallback otherwise
+    shp = shin_devig(market) if (devig and kind == "decimal") else None
     rows = []
     for t, p in imp.items():
-        mk = (p / s) if devig else p
+        mk = shp[t] if shp is not None else ((p / s) if devig else p)
         mp = (model_df.loc[t, col] / 100.0) if t in model_df.index else 0.0
         rows.append({"Team": t, "Model%": round(mp*100, 1), "Market%": round(mk*100, 1),
                      "Edge(pp)": round((mp-mk)*100, 1),
                      "Edge_x": round(mp/mk, 2) if mk > 0 else None})
     out = pd.DataFrame(rows).set_index("Team").sort_values("Market%", ascending=False)
-    print(f"[market overround: {overround:.1f}%  (de-vig={'on' if devig else 'off'})]")
+    print(f"[market overround: {overround:.1f}%  (de-vig={'Shin' if (devig and kind=='decimal') else ('on' if devig else 'off')})]")
     return out

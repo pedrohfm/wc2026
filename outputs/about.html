@@ -87,9 +87,10 @@ official format; and the champion is recorded. Ten thousand independent paths co
 probabilities into stage-by-stage and championship probabilities, each reported with its Monte Carlo standard
 error.</p>
 <h3>4 · Combination with the market</h3>
-<p>The de-vigged outright market is combined with the model through a weighted opinion pool (default 70%
-market, 30% model). Because the two sources err on partially independent information sets, the combination
-attains lower out-of-sample loss than either constituent alone.</p>
+<p>The outright market, de-vigged using the Shin (1992) method — which removes the bookmaker margin while
+correcting the favourite–longshot bias that simple proportional normalisation leaves in — is combined with the
+model through a weighted opinion pool (default 70% market, 30% model). Because the two sources err on partially
+independent information sets, the combination attains lower out-of-sample loss than either constituent alone.</p>
 <h3>5 · Variable selection (ordered logit, walk-forward cross-validation)</h3>
 <p>To assess whether additional variables carry information beyond the rating, an ordered-logit Win/Draw/Loss
 model is estimated by maximum likelihood and each candidate is scored by its <i>incremental</i> out-of-sample
@@ -166,5 +167,5 @@ performance and out-of-sample diagnostics are not guarantees of future results.<
 <div class="foot">© 2026 <b>Pedro Henrique Figueiredo Magalhães</b>. Model design, implementation, analysis,
 and documentation by Pedro Henrique Figueiredo Magalhães. All rights reserved. Data © their respective
 providers (see above).<br>
-Last generated 2026-06-21 09:12.</div>
+Last generated 2026-06-22 10:47.</div>
 </div></body></html>

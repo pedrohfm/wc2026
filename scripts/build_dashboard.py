@@ -13,11 +13,17 @@ import glob
 import json
 import os
 import re
+import sys
 import datetime as dt
 
 import pandas as pd
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(ROOT, "src"))
+try:
+    from wc2026.blend import shin_probs            # Shin (1992) margin removal
+except Exception:
+    shin_probs = None
 OUT = os.path.join(ROOT, "outputs")
 ODDS = os.path.join(ROOT, "data", "odds_champion.csv")
 ROUNDS = ["R32", "R16", "QF", "SF", "Final", "Win"]
@@ -49,10 +55,15 @@ def market_probs():
         return {}
     df = pd.read_csv(ODDS)
     try:
-        imp = {str(r["team"]): 1.0 / float(r["odds"]) for _, r in df.iterrows() if float(r["odds"]) > 1}
+        odds = {str(r["team"]): float(r["odds"]) for _, r in df.iterrows() if float(r["odds"]) > 1}
     except Exception:
         return {}
-    s = sum(imp.values())
+    if not odds:
+        return {}
+    if shin_probs is not None:                       # Shin (1992) margin removal
+        teams = list(odds); ps = shin_probs([odds[t] for t in teams])
+        return {t: round(ps[i] * 100, 2) for i, t in enumerate(teams)}
+    imp = {t: 1.0 / o for t, o in odds.items()}; s = sum(imp.values())   # proportional fallback
     return {t: round(p / s * 100, 2) for t, p in imp.items()} if s else {}
 
 
@@ -666,9 +677,10 @@ official format; and the champion is recorded. Ten thousand independent paths co
 probabilities into stage-by-stage and championship probabilities, each reported with its Monte Carlo standard
 error.</p>
 <h3>4 · Combination with the market</h3>
-<p>The de-vigged outright market is combined with the model through a weighted opinion pool (default 70%
-market, 30% model). Because the two sources err on partially independent information sets, the combination
-attains lower out-of-sample loss than either constituent alone.</p>
+<p>The outright market, de-vigged using the Shin (1992) method — which removes the bookmaker margin while
+correcting the favourite–longshot bias that simple proportional normalisation leaves in — is combined with the
+model through a weighted opinion pool (default 70% market, 30% model). Because the two sources err on partially
+independent information sets, the combination attains lower out-of-sample loss than either constituent alone.</p>
 <h3>5 · Variable selection (ordered logit, walk-forward cross-validation)</h3>
 <p>To assess whether additional variables carry information beyond the rating, an ordered-logit Win/Draw/Loss
 model is estimated by maximum likelihood and each candidate is scored by its <i>incremental</i> out-of-sample

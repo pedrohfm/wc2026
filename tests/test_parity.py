@@ -90,7 +90,10 @@ def test_simulate_schedule_identical(elo):
 
 
 def test_compare_to_market_identical(elo):
+    # The package now de-vigs via Shin (an intentional improvement over the
+    # monolith's proportional method), so compare with devig=False to verify the
+    # rest of the function is unchanged. (Shin is covered in test_blend.py.)
     probs = E.run_monte_carlo(elo, iterations=400, seed=7, verbose=False)
-    a = L.compare_to_market(probs, market=L.MARKET_ODDS)
-    b = E.compare_to_market(probs, market=E.MARKET_ODDS)
+    a = L.compare_to_market(probs, market=L.MARKET_ODDS, devig=False)
+    b = E.compare_to_market(probs, market=E.MARKET_ODDS, devig=False)
     pdt.assert_frame_equal(a, b)

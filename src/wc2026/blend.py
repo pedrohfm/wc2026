@@ -55,11 +55,45 @@ def optimize_blend_weight(P_model, P_market, y, kind="linear", grid=None):
     return float(grid[i]), float(lls[i]), _logloss(_norm(P_model), y), _logloss(_norm(P_market), y)
 
 
-def devig(odds):
-    """Decimal champion odds {team: o} -> de-vigged probabilities (proportional)."""
+def shin_probs(odds):
+    """Shin (1992) margin removal for a single book. Given decimal odds, return
+       probabilities summing to 1 that account for a proportion z of
+       insider/informed money — which shaves the favourite-longshot bias that the
+       naive proportional method leaves in. Solved for z by bisection.
+       odds: list of decimal odds. Returns list of probabilities."""
+    import math
+    pi = [1.0 / o for o in odds]
+    B = sum(pi)
+    if B <= 1.0:
+        return [p / B for p in pi] if B else pi          # no margin -> proportional
+    def P(z):
+        return [(math.sqrt(z * z + 4 * (1 - z) * p * p / B) - z) / (2 * (1 - z)) for p in pi]
+    lo, hi = 0.0, 0.999
+    for _ in range(80):                                   # sum(P) decreases in z; solve sum=1
+        mid = (lo + hi) / 2
+        if sum(P(mid)) > 1.0: lo = mid
+        else: hi = mid
+    p = P((lo + hi) / 2); s = sum(p)
+    return [x / s for x in p]
+
+
+def shin_devig(odds):
+    """Shin margin removal for {team: decimal_odds} -> {team: probability}."""
+    teams = [t for t, o in odds.items() if o and o > 1]
+    if not teams:
+        return {}
+    ps = shin_probs([odds[t] for t in teams])
+    return {t: ps[i] for i, t in enumerate(teams)}
+
+
+def devig(odds, method="shin"):
+    """Decimal champion odds {team: o} -> (de-vigged probabilities, overround%).
+       method='shin' (default, rigorous) or 'proportional' (multiplicative)."""
     imp = {t: 1.0 / o for t, o in odds.items() if o and o > 1}
-    s = sum(imp.values())
-    return {t: p / s for t, p in imp.items()}, (s - 1.0) * 100.0
+    s = sum(imp.values()); over = (s - 1.0) * 100.0
+    if method == "shin":
+        return shin_devig(odds), over
+    return {t: p / s for t, p in imp.items()}, over
 
 
 def blend_champion(model_df, market_odds, w=0.35, col="Win", kind="linear"):

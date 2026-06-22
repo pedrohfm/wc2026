@@ -36,7 +36,7 @@ from .goals_model import (GoalsModel, fit as fit_goals_model, negloglik as goals
 
 # --- model + market blending ---
 from .blend import (blend_linear, blend_logpool, optimize_blend_weight,
-                    blend_champion, devig as devig_odds)
+                    blend_champion, devig as devig_odds, shin_probs, shin_devig)
 
 # --- orthogonal feature injection (squad value -> Elo nudge) ---
 from .features import elo_nudge_from_values

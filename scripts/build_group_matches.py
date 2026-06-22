@@ -62,10 +62,8 @@ def load_market():
             continue
         if min(oh, od, oa) <= 1:
             continue
-        imp = 1/oh + 1/od + 1/oa
-        if imp <= 0:
-            continue
-        out[(str(r["home"]), str(r["away"]))] = (1/oh/imp, 1/od/imp, 1/oa/imp)
+        ph, pd_, pa = E.shin_probs([oh, od, oa])   # Shin (1992) margin removal
+        out[(str(r["home"]), str(r["away"]))] = (ph, pd_, pa)
     return out
 
 

@@ -231,14 +231,18 @@ def devig(odds, method="proportional"):
     if method == "shin":
         out = np.empty_like(imp)
         for i in range(len(imp)):
-            pi = imp[i]; ss = pi.sum()
-            z = 0.0
-            for _ in range(60):                          # solve Shin z by iteration
-                den = np.sqrt(z * z + 4 * (1 - z) * pi * pi / ss)
-                p = (den - z) / (2 * (1 - z))
-                p = p / p.sum()
-                z = max(0.0, min(0.2, (ss - 1.0) / (ss - (p * p).sum() * ss) if ss > 1 else 0.0))
-            out[i] = p
+            pi = imp[i]; B = pi.sum()
+            if B <= 1.0:
+                out[i] = pi / B; continue
+            lo, hi = 0.0, 0.999                          # sum(P) decreases in z; bisect to sum=1
+            for _ in range(80):
+                z = (lo + hi) / 2
+                P = (np.sqrt(z * z + 4 * (1 - z) * pi * pi / B) - z) / (2 * (1 - z))
+                if P.sum() > 1.0: lo = z
+                else: hi = z
+            z = (lo + hi) / 2
+            P = (np.sqrt(z * z + 4 * (1 - z) * pi * pi / B) - z) / (2 * (1 - z))
+            out[i] = P / P.sum()
         return out
     raise ValueError(method)
 
@@ -257,7 +261,7 @@ def attach_match_odds(df, odds_path):
     return df.merge(o, on=["date", "home", "away"], how="left")
 
 
-def market_probs_from_df(df, method="proportional"):
+def market_probs_from_df(df, method="shin"):
     """Return (P[N,3] with NaN rows where no odds, mask) using the first odds
        column-set found. Returns (None, all-False) if the dataset has no odds."""
     cols = next((c for c in ODDS_COL_SETS if all(x in df.columns for x in c)), None)
@@ -460,7 +464,7 @@ def run(df, label, k=60.0, home_adv=DEFAULTS["HOME_ADV"], base=DEFAULTS["BASE"],
 # 10. WALK-FORWARD (EXPANDING-WINDOW) CROSS-VALIDATION
 # ----------------------------------------------------------------------------
 def run_cv(df, label, k=60.0, home_adv=DEFAULTS["HOME_ADV"], base=DEFAULTS["BASE"],
-           n_folds=6, min_train_frac=0.40, devig_method="proportional",
+           n_folds=6, min_train_frac=0.40, devig_method="shin",
            make_plot=True, true=None):
     """Expanding-window CV. Elo is online (leakage-free) over the whole stream;
        for each fold the knobs (GOAL_SCALE, Dixon-Coles rho, Davidson nu) are

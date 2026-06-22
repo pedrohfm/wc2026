@@ -35,10 +35,13 @@ results, eloratings.net, The Odds API, Transfermarkt) is better suited.
 *Decision: do not adopt for data.*
 
 **Implied-odds methods (Shin, power).** A legitimate refinement to market
-de-vigging relative to the proportional method. The benchmark harness already
-includes a Shin option; the live blend currently uses the proportional method.
-*Decision: available as an option; immaterial to the headline forecast, not
-adopted by default.*
+de-vigging relative to the proportional method: Shin (1992) removes the
+bookmaker margin while correcting the favourite–longshot bias. *Decision:
+adopted.* The Shin method is now the default de-vig across the project (champion
+comparison, market blend, group-stage market, dashboard, and the backtest
+benchmark), implemented in-house in `src/wc2026/blend.py` (no new dependency).
+On the current outright book (≈14% overround) it lifts the favourite a little
+(e.g. France 18.6% → 19.7%) and shaves the longshots, as expected.
 
 **Time-decay weighting (the one adopted refinement).** penaltyblog's Dixon–Coles
 weighting motivates weighting recent matches more heavily in the likelihood. We

@@ -36,6 +36,24 @@ def test_optimizer_beats_both_when_market_sharper():
     assert w < 0.5                              # leans to the sharper market
 
 
+def test_shin_devig_corrects_favourite_longshot_bias():
+    from wc2026.blend import shin_probs
+    odds = [1.5, 4.0, 7.0]                       # clear favourite + margin
+    ps = shin_probs(odds)
+    assert abs(sum(ps) - 1.0) < 1e-9
+    assert all(0 < p < 1 for p in ps)
+    imp = [1/o for o in odds]; s = sum(imp)
+    prop = [p / s for p in imp]                  # proportional (multiplicative) de-vig
+    assert ps[0] >= prop[0] - 1e-9              # Shin lifts the favourite
+    assert ps[-1] <= prop[-1] + 1e-9           # and shaves the longshot
+
+
+def test_shin_no_margin_is_proportional():
+    from wc2026.blend import shin_probs
+    ps = shin_probs([2.0, 2.0])                  # booksum = 1, no margin
+    assert abs(ps[0] - 0.5) < 1e-6 and abs(ps[1] - 0.5) < 1e-6
+
+
 def test_blend_champion_table():
     probs = pd.DataFrame({"Win": [30.0, 20.0, 10.0]}, index=["A", "B", "C"])
     odds = {"A": 3.0, "B": 5.0, "C": 8.0}
