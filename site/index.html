@@ -190,7 +190,7 @@ class Component extends DCLogic {
   colorFor(teams){ const m={}; teams.forEach((t,i)=>m[t]=PAL[i%PAL.length]); return m; }
   playedCount(){ return this.D.gm.rows.filter(r=>r.played).length; }
   flag(t,hgt){ const h=React.createElement; const c=FLAGC[t]; if(!c) return null; const lc=c.toLowerCase(); const ht=hgt||15; const w=Math.round(ht*4/3);
-    return h("img",{src:`https://flagcdn.com/h${Math.max(40,Math.round(ht*2.5))}/${lc}.png`,style:{height:ht,width:w,borderRadius:2,objectFit:"cover",boxShadow:"0 0 0 1px rgba(0,0,0,.10)",flex:"none",display:"block"},loading:"lazy",alt:"",onError:e=>{e.target.style.visibility="hidden";}}); }
+    return h("img",{src:`https://flagcdn.com/w80/${lc}.png`,srcSet:`https://flagcdn.com/w160/${lc}.png 2x`,style:{height:ht,width:w,borderRadius:2,objectFit:"cover",boxShadow:"0 0 0 1px rgba(0,0,0,.10)",flex:"none",display:"block"},loading:"lazy",alt:"",onError:e=>{e.target.style.visibility="hidden";}}); }
   teamTag(t,o){ o=o||{}; const h=React.createElement; return h("span",{style:{display:"inline-flex",alignItems:"center",gap:7,minWidth:0,fontSize:o.fs||13.5,fontWeight:o.weight||600,color:"var(--ink)"}}, this.flag(t,o.size||15), h("span",{style:{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},t)); }
   seg(opts,cur,on,o){ const h=React.createElement; o=o||{}; return h("div",{style:{display:"inline-flex",background:"var(--soft)",border:"1px solid var(--line)",borderRadius:10,padding:2,gap:2}}, opts.map(op=>h("button",{key:op.v,onClick:()=>on(op.v),style:{border:0,cursor:"pointer",background:cur===op.v?"var(--accent)":"transparent",color:cur===op.v?"#fff":"var(--mut)",padding:o.pad||"6px 12px",borderRadius:8,font:"600 12.5px Inter",letterSpacing:".01em",transition:"background .15s,color .15s",whiteSpace:"nowrap"}},op.l))); }
 
@@ -262,7 +262,8 @@ class Component extends DCLogic {
       const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
       els.push(h("path",{key:"l"+t,d,fill:"none",stroke:col[t],strokeWidth:S.hi===t?3.4:2,opacity:dim?.16:1,strokeLinejoin:"round",strokeLinecap:"round",strokeDasharray:len,strokeDashoffset:len*(1-S.chartT)}));
       pts.forEach((p,i)=>els.push(h("circle",{key:"c"+t+i,cx:p[0],cy:p[1],r:S.hi===t?4:2.6,fill:col[t],opacity:(dim?.16:1)*(S.chartT>.6?1:0),stroke:"var(--paper)",strokeWidth:1,style:{cursor:"pointer"},onMouseEnter:()=>this.showTip(t,i,p),onMouseLeave:()=>this.setState({tip:null}),onClick:()=>this.setState({detail:t})})));
-      const last=pts[pts.length-1]; els.push(h("text",{key:"t"+t,x:last[0]+8,y:last[1]+4,fill:col[t],fontSize:11.5,fontWeight:600,opacity:(dim?.3:1)*S.chartT,fontFamily:"Inter",style:{cursor:"pointer"},onClick:()=>this.setState({detail:t})},t)); });
+      const last=pts[pts.length-1]; els.push(h("text",{key:"t"+t,x:last[0]+8,y:last[1]+4,fill:col[t],fontSize:11.5,fontWeight:600,opacity:(dim?.3:1)*S.chartT,fontFamily:"Inter",style:{cursor:"pointer"},onClick:()=>this.setState({detail:t})},t));
+      const _fc=FLAGC[t]; if(_fc) els.push(h("image",{key:"tf"+t,href:`https://flagcdn.com/w40/${_fc.toLowerCase()}.png`,x:last[0]+8+t.length*6.7+5,y:last[1]-5,width:15,height:11,opacity:(dim?.3:1)*S.chartT,preserveAspectRatio:"xMidYMid slice",style:{pointerEvents:"none"}})); });
     const svg=h("svg",{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:"xMidYMid meet",style:{display:"block",width:"100%",height:"auto",overflow:"visible"}},els);
     // controls
     const controls=h("div",{style:{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:14}},
@@ -279,7 +280,7 @@ class Component extends DCLogic {
       h("div",{style:{fontVariantNumeric:"tabular-nums",marginTop:2}}, tp.v.toFixed(1)+"%",(tp.d!==0?h("span",{style:{color:tp.d>0?"#7ee2a8":"#ff9c9c",marginLeft:6}},(tp.d>0?"▲ +":"▼ ")+tp.d.toFixed(1)):null))); }
     const legendTeams=teams; const legend=h("div",{style:{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}},
       legendTeams.map(t=>h("div",{key:t,onMouseEnter:()=>this.setState({hi:t}),onMouseLeave:()=>this.setState({hi:null}),onClick:()=>this.setState({detail:t}),style:{display:"inline-flex",alignItems:"center",gap:6,font:"500 12px Inter",color:"var(--mut)",cursor:"pointer",padding:"3px 8px",borderRadius:8,opacity:S.hi&&S.hi!==t?.4:1,background:S.hi===t?"var(--soft)":"transparent",transition:"opacity .15s"}},
-        h("span",{style:{width:9,height:9,borderRadius:9,background:col[t],flex:"none"}}), t, h("b",{style:{color:"var(--ink)",fontVariantNumeric:"tabular-nums"}},this.latest(t).toFixed(1)+"%"))));
+        h("span",{style:{width:9,height:9,borderRadius:9,background:col[t],flex:"none"}}), t, this.flag(t,11), h("b",{style:{color:"var(--ink)",fontVariantNumeric:"tabular-nums"}},this.latest(t).toFixed(1)+"%"))));
     return h("div",{},controls,h("div",{style:{position:"relative"}},svg,tip),
       h("div",{style:{display:"flex",justifyContent:"flex-start",alignItems:"flex-end",gap:12,flexWrap:"wrap"}},legend)); }
 
@@ -469,10 +470,14 @@ class Component extends DCLogic {
     const byNo={}; R32.forEach(x=>byNo[x.m]=x); R16.forEach(x=>byNo[x.m]=x); QF.forEach(x=>byNo[x.m]=x); SF.forEach(x=>byNo[x.m]=x); FN.forEach(x=>byNo[x.m]=x);
     const resolve=spec=>{ if(!spec) return null; if(Array.isArray(spec)){ const arr=POS[spec[0]]; return arr?arr[spec[1]-1]:null; } if(spec.t) return TA[spec.t]||null; return null; };
     const elo=t=>t?((D.info[t]||{}).Elo||0):-1;
+    // Resolve every knockout match by the model's championship probability (Win%),
+    // so the projected champion is the same team the headline/chart name as favourite.
+    // Rating only breaks exact ties (e.g. minnows both rounding to ~0%).
+    const score=t=>t?((this.latest(t,"Win")||0)*1e6+Math.max(0,elo(t))):-1;
     const winCache={};
     function winner(no){ if(winCache[no]!==undefined) return winCache[no]; const mt=byNo[no]; let oa,ob;
       if(mt.m<=88){ oa=resolve(mt.a); ob=resolve(mt.b); } else { oa=winner(mt.a); ob=winner(mt.b); }
-      let w=null; if(oa&&ob) w=elo(oa)>=elo(ob)?oa:ob; else w=oa||ob; winCache[no]=w; return w; }
+      let w=null; if(oa&&ob) w=score(oa)>=score(ob)?oa:ob; else w=oa||ob; winCache[no]=w; return w; }
     const occ=no=>{ const mt=byNo[no]; return mt.m<=88?[resolve(mt.a),resolve(mt.b)]:[winner(mt.a),winner(mt.b)]; };
     const chipH=22,chipGap=3,matchH=chipH*2+chipGap,vgap=15,pitch=matchH+vgap,topPad=38;
     const colW=156,colGap=40,colPitch=colW+colGap,colX=i=>i*colPitch;
@@ -498,7 +503,7 @@ class Component extends DCLogic {
       h("div",{style:{font:"700 9px Inter",letterSpacing:".14em",textTransform:"uppercase",opacity:.85}},"Projected champion"),
       h("div",{onClick:champ?(()=>this.setState({detail:champ})):null,style:{display:"flex",alignItems:"center",gap:9,marginTop:8,cursor:champ?"pointer":"default"}}, champ?this.flag(champ,22):null, h("span",{style:{fontFamily:"Newsreader",fontWeight:600,fontSize:19,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},champ||"—"))));
     const canvas=h("div",{style:{position:"relative",width:totalW,height:totalH,minWidth:totalW}},svg,boxes);
-    const note=h("div",{style:{font:"500 12px Inter",color:"var(--mut)",marginTop:14,textWrap:"pretty"}},"Projected from the official FIFA slot structure: group winners and runners-up are read from current standings, the eight best third-placed teams are dropped into their official slots, and every tie is resolved in favour of the higher-rated side. The bracket firms up as group results land — click any team for its dossier.");
+    const note=h("div",{style:{font:"500 12px Inter",color:"var(--mut)",marginTop:14,textWrap:"pretty"}},"Projected from the official FIFA slot structure: group winners and runners-up are read from current standings, the eight best third-placed teams are dropped into their official slots, and every match is resolved in favour of the side the model gives the higher championship probability (rating breaks exact ties) — so the projected champion is the same team the forecast names as favourite. The bracket firms up as group results land — click any team for its dossier.");
     return h("div",{},h("div",{style:{overflowX:"auto",paddingBottom:6}},canvas),note); }
 
   renderVals(){

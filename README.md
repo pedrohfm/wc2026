@@ -48,8 +48,17 @@ bash scripts/daily.sh                      # odds -> forecast -> dashboard -> de
 
 ## Summary
 
-This is a well-calibrated **Elo-based** forecaster, not a market-beater. Every
-attempt to push past the Elo information ceiling from within (richer goals
-model, match-importance features, squad value, sigma tuning) was tested and
-rejected out-of-sample — only importing external information (the market blend)
-helped. The model knows, and states, its own ceiling.
+This is a well-calibrated **Elo-based** forecaster: ~16% better than the
+no-skill base rate out-of-sample (ECE 0.025), with a full Monte-Carlo
+simulation behind the group tiebreakers and the knockout bracket. Every attempt
+to beat the Elo ceiling *from within* (richer goals model, match-importance,
+squad value, sigma tuning) was tested and rejected out-of-sample — so the
+model-only forecast is the headline, and the simulation is where the Dixon-Coles
+layer earns its keep (it ties the one-line Elo benchmark on match outcomes).
+
+The market is the obvious *external* lever, but it isn't backable yet: there are
+no historical international odds to backtest, and on the live tournament so far
+the model is tracking **ahead** of the de-vigged market. So the market is shown
+as a benchmark, not folded into the headline, and the blend stays optional and
+evidence-gated. `backtest/live_market_scorecard.py` keeps that model-vs-market
+read honest as results land.

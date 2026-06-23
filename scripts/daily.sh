@@ -11,6 +11,9 @@ python3 scripts/fetch_odds.py || echo "  (odds pull skipped — set ODDS_API_KEY
 echo "==> 2/3  Running forecast"
 python3 scripts/build_and_forecast.py
 
+echo "--- Model vs market (live OOS scorecard, honest read) ---"
+python3 backtest/live_market_scorecard.py || echo "  (scorecard skipped)"
+
 echo "==> 3/3  Building dashboard + deploying to GitHub Pages"
 python3 scripts/publish.py --git
 

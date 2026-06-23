@@ -9,13 +9,17 @@ fit by maximum likelihood, every claim is testable out-of-sample on the same
 walk-forward scaffold, and the constants are being replaced by calibrated
 values. The honest objective has also been reframed — away from "confidently
 pick the champion" (irreducibly luck-dominated in a 48-team knockout) and toward
-**calibrated probabilities that beat Elo-only and are measured against the
-market**.
+**calibrated probabilities, honestly benchmarked against the Elo-logistic and
+the market**.
 
 Three things follow and recur throughout: there is effectively *one* strength
-variable (Elo), so "predictive power" only means *incremental* value over Elo;
-the **market is the ceiling**, not the target, because the model uses strictly
-less information; and several constants are **jointly identified with the Elo
+variable (Elo), so "predictive power" only means *incremental* value over Elo —
+and on match outcomes there is none beyond Elo, so the Dixon-Coles layer earns
+its keep in the *simulation* (group tiebreakers, bracket), not in W/D/L; the
+**market is the benchmark** we measure against — a ceiling in principle, since
+the model uses strictly less information, though that has *not* held on the live
+tournament so far (the model is currently tracking ahead of the de-vigged
+market); and several constants are **jointly identified with the Elo
 spread**, so they must be calibrated together, never copied from another system.
 
 ---
@@ -59,7 +63,7 @@ when it is absent the engine reproduces the original behaviour **byte-for-byte**
 | Home advantage a flat guessed 60 | **Calibratable** | `home_elo` is now a fitted parameter (synthetic fit ≈ correct under oracle). |
 | Single-seed headline, no MC error | **Partially** | CV pools many folds; per-run MC standard errors still to be reported. |
 | "Predict the winner" is the wrong objective | **Reframed** | Success = calibration + log-loss vs benchmarks, not champion accuracy. |
-| Market edge likely reflects model blind spots | **Built into framing** | Market is a scored benchmark and the explicit ceiling, not the target. |
+| Market edge likely reflects model blind spots | **Built into framing** | Market is a scored benchmark, not the target — a ceiling in principle, but not assumed to beat the model (live, it hasn't so far). |
 
 The team/confederation rating noise was reviewed and found **structurally
 correct** (drawn once per simulated tournament, held fixed across its matches —
@@ -205,21 +209,28 @@ framing).
 
 ---
 
-## 8. "Ultimate model" upgrades — one win and two honest negatives
+## 8. "Ultimate model" upgrades — three honest negatives
 
 After the model was validated on real data (well-calibrated, ECE 0.025, ~16%
-better than no-skill, but tied with one-line Elo-logistic and beaten by the
-market), three upgrades were attempted to push past the Elo ceiling. Reporting
-all three outcomes, because the negatives are as informative as the win.
+better than no-skill, but tied with the one-line Elo-logistic on match outcomes
+— its edge is in the simulation, not W/D/L), three upgrades were attempted to
+push past the Elo ceiling. None earns a place in the headline forecast on the
+current evidence; reporting all three because the negatives are the finding.
 
-**WIN — model + market blend (`src/wc2026/blend.py`).** Because the market
-out-predicts the model out-of-sample, combining them beats either alone. A
-linear (or log-opinion-pool) blend of the model and de-vigged market, validated
-on synthetic (the optimiser finds the market-leaning weight and the blend's
-log-loss is below both components), is now the headline market-aware output
-(STEP 7 of the pipeline). Weight defaults to 30% model / 70% market — a prior,
-since champion-level data can't tune it; `optimize_blend_weight()` tunes it at
-match level once you supply historical match odds.
+**NOT BACKABLE YET — model + market blend (`src/wc2026/blend.py`).** The
+intuition is that the market prices information the model lacks (injuries,
+lineups, flow), so blending should help. But this cannot be confirmed on real
+data: there are **no historical international odds** to backtest, and the only
+real out-of-sample evidence we have — the live 2026 tournament — currently runs
+the *other* way. On the played group matches with odds (`live_market_scorecard.py`),
+the **model beats the de-vigged market** and every blend weight above zero makes
+log-loss *worse* (best weight = 0; small n, directional only). The blend is
+therefore validated **on synthetic only** (where a market with known edge exists
+by construction) — useful machinery, not a demonstrated real-world win. It stays
+available behind a weight (default leans to the market as a prior, since
+champion-level data can't tune it) but is **not** folded into the headline,
+which is model-only. `optimize_blend_weight()` will tune it at match level the
+day historical odds are supplied; until then the live scorecard is the gate.
 
 **NEGATIVE — feeding match-importance into the goals engine doesn't help.** Two
 principled forms were tested out-of-sample on competitive matches: (a) fitting
@@ -246,16 +257,19 @@ that match data under-identifies. Calibrating it instead against the market's
 champion dispersion (`backtest/calibrate_sigma.py`) is *degenerate*: the
 optimum sits at the grid edge — the model is so much more concentrated than the
 market that only an extreme, signal-destroying sigma would match it. So sigma is
-kept at a transparent moderate default (with the sensitivity panel), and the
-**blend** is the right way to import the market's dispersion — not sigma
-inflation. This is itself the finding: over-concentration is real and large, and
-the clean fix is the blend, not a knob.
+kept at a transparent moderate default (with the sensitivity panel). The model
+*is* more concentrated than the market — that is a real, large effect — but the
+"fix" (a market blend) is only justified once the market is shown to be better,
+which on live data it currently is not. So we flag the over-concentration and
+leave the knob alone rather than import dispersion the data doesn't endorse.
 
-**Net.** The "ultimate" configuration is: Elo → MLE Dixon-Coles → Monte Carlo,
-with the outright **blended with the market**, hosts capped, and skill reported
-up front. The rigorous lesson is that past the Elo ceiling, gains come from
-*information* (the market; squad value if you add it), not from more modelling
-on Elo alone — and we now have the evidence, not just the assertion.
+**Net.** The headline configuration is **model-only**: Elo → MLE Dixon-Coles →
+Monte Carlo, hosts capped, skill reported up front, with the market shown
+alongside as a benchmark (not folded in). The rigorous lesson is that past the
+Elo ceiling, any further gain must come from *information* the model lacks — and
+the obvious source, the market, is **not yet demonstrably better** on real data
+(no historical odds; live, the model is ahead). The blend machinery is built and
+tested, waiting on evidence; the live scorecard is what will produce it.
 
 ### Updated run commands
 
