@@ -26,7 +26,23 @@ except Exception:
     shin_probs = None
 OUT = os.path.join(ROOT, "outputs")
 ODDS = os.path.join(ROOT, "data", "odds_champion.csv")
+SCHED = os.path.join(ROOT, "data", "schedule.csv")
 ROUNDS = ["R32", "R16", "QF", "SF", "Final", "Win"]
+
+
+def collect_schedule():
+    """match number -> {date, et, utc, venue, city, state, country}.
+       Returns {} if the schedule file is absent (the UI then just omits times)."""
+    if not os.path.exists(SCHED):
+        return {}
+    df = pd.read_csv(SCHED)
+    out = {}
+    for _, r in df.iterrows():
+        out[str(int(r["match"]))] = {
+            "date": str(r["date"]), "et": str(r["et"]), "utc": str(r["utc"]),
+            "venue": str(r["venue"]), "city": str(r["city"]),
+            "state": str(r["state"]), "country": str(r["country"])}
+    return out
 
 
 def _load(path):
@@ -128,6 +144,7 @@ def build_data():
         "teams": teams, "info": info, "series": series,
         "market": market_probs(),
         "gm": collect_group(),
+        "sched": collect_schedule(),
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
