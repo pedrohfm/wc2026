@@ -1,0 +1,73 @@
+match,group,home,away,m_home,m_draw,m_away,mkt_home,mkt_draw,mkt_away,actual,score,played
+1,A,Mexico,South Africa,72.9,18.2,8.9,,,,H,2-0,1
+2,A,South Korea,Czechia,42.8,28.5,28.6,,,,H,2-1,1
+3,B,Canada,Bosnia & Herzegovina,56.6,25.2,18.1,,,,D,1-1,1
+4,D,United States,Paraguay,56.9,25.1,18.0,,,,H,4-1,1
+5,B,Qatar,Switzerland,8.0,17.2,74.8,,,,D,1-1,1
+6,C,Brazil,Morocco,45.5,28.1,26.4,,,,D,1-1,1
+7,C,Haiti,Scotland,16.1,24.1,59.8,,,,A,0-1,1
+8,D,Australia,Türkiye,34.9,29.1,36.0,,,,H,2-0,1
+9,E,Germany,Curaçao,83.6,12.0,4.4,,,,H,7-1,1
+10,F,Netherlands,Japan,43.1,28.5,28.4,,,,D,2-2,1
+11,E,Côte d'Ivoire,Ecuador,22.7,27.1,50.1,,,,H,1-0,1
+12,F,Sweden,Tunisia,48.3,27.6,24.2,,,,H,5-1,1
+13,H,Spain,Cabo Verde,91.1,6.9,1.9,90.9,6.9,2.3,D,0-0,1
+14,G,Belgium,Egypt,43.8,28.4,27.8,7.0,90.6,2.4,D,1-1,1
+15,H,Saudi Arabia,Uruguay,16.8,24.5,58.7,10.8,21.4,67.7,D,1-1,1
+16,G,Iran,New Zealand,63.6,22.6,13.8,54.4,27.1,18.5,D,2-2,1
+17,I,France,Senegal,64.4,22.2,13.4,66.3,21.3,12.5,H,3-1,1
+18,I,Iraq,Norway,8.4,17.6,73.9,5.4,12.6,82.0,A,1-4,1
+19,J,Argentina,Algeria,71.6,18.8,9.6,70.3,20.0,9.7,H,3-0,1
+20,J,Austria,Jordan,55.5,25.6,18.9,72.9,17.2,9.9,H,3-1,1
+21,K,Portugal,DR Congo,62.2,23.2,14.7,76.0,16.7,7.3,D,1-1,1
+22,L,England,Croatia,50.4,27.1,22.5,,,,H,4-2,1
+23,L,Ghana,Panama,48.9,27.4,23.6,40.8,30.1,29.1,H,1-0,1
+24,K,Uzbekistan,Colombia,7.3,16.3,76.4,9.5,19.6,71.0,A,1-3,1
+25,A,Czechia,South Africa,52.3,26.5,21.1,51.8,26.6,21.6,D,1-1,1
+26,B,Switzerland,Bosnia & Herzegovina,67.3,20.9,11.7,62.1,23.2,14.7,H,4-1,1
+27,B,Canada,Qatar,64.9,22.0,13.1,76.2,16.2,7.7,H,6-0,1
+28,A,Mexico,South Korea,48.8,27.4,23.7,47.5,28.8,23.7,H,1-0,1
+29,D,United States,Australia,55.3,25.6,19.0,,,,H,2-0,1
+30,C,Scotland,Morocco,21.0,26.5,52.4,15.8,26.1,58.1,A,0-1,1
+31,C,Brazil,Haiti,83.6,12.0,4.4,88.4,8.1,3.6,H,3-0,1
+32,D,Türkiye,Paraguay,37.4,29.0,33.5,47.0,28.1,25.0,A,0-1,1
+33,F,Netherlands,Sweden,63.0,22.8,14.2,56.7,23.5,19.8,H,5-1,1
+34,E,Germany,Côte d'Ivoire,58.4,24.6,17.0,65.1,20.1,14.8,H,2-1,1
+35,E,Ecuador,Curaçao,77.5,15.7,6.8,86.7,9.7,3.5,D,0-0,1
+36,F,Tunisia,Japan,11.5,20.7,67.9,13.6,23.2,63.1,A,0-4,1
+37,H,Spain,Saudi Arabia,86.3,10.2,3.4,89.0,8.2,2.8,H,4-0,1
+38,G,Belgium,Iran,40.5,28.8,30.7,68.1,20.2,11.8,D,0-0,1
+39,H,Uruguay,Cabo Verde,67.5,20.9,11.7,66.8,22.5,10.7,D,2-2,1
+40,G,New Zealand,Egypt,15.9,23.9,60.2,15.5,23.3,61.3,A,1-3,1
+41,J,Argentina,Austria,70.4,19.5,10.2,64.6,22.8,12.6,H,2-0,1
+42,I,France,Iraq,84.9,11.2,3.9,94.7,4.8,0.4,H,3-0,1
+43,I,Norway,Senegal,50.0,27.1,22.8,41.8,27.9,30.3,H,3-2,1
+44,J,Jordan,Algeria,19.8,26.0,54.2,14.2,22.1,63.7,A,1-2,1
+45,K,Portugal,Uzbekistan,72.1,18.6,9.3,84.9,11.1,4.0,H,5-0,1
+46,L,England,Ghana,73.5,17.9,8.6,82.0,13.0,5.1,D,0-0,1
+47,L,Panama,Croatia,9.2,18.5,72.2,13.1,22.0,64.8,A,0-1,1
+48,K,Colombia,DR Congo,66.9,21.1,12.0,63.2,23.5,13.3,H,1-0,1
+49,B,Switzerland,Canada,46.1,28.0,25.9,40.7,30.6,28.7,,,0
+50,B,Bosnia & Herzegovina,Qatar,43.5,28.5,28.1,69.6,18.0,12.4,,,0
+51,C,Scotland,Brazil,14.3,22.9,62.8,9.8,17.5,72.7,,,0
+52,C,Morocco,Haiti,75.8,16.6,7.6,82.5,12.5,5.0,,,0
+53,A,Czechia,Mexico,18.2,25.2,56.6,24.9,24.7,50.4,,,0
+54,A,South Africa,South Korea,16.0,24.0,60.0,16.9,24.7,58.4,,,0
+55,E,Ecuador,Germany,28.2,28.5,43.4,24.7,23.4,51.8,,,0
+56,E,Curaçao,Côte d'Ivoire,13.5,22.3,64.1,4.2,10.8,85.0,,,0
+57,F,Japan,Sweden,55.0,25.7,19.2,50.8,27.3,21.9,,,0
+58,F,Tunisia,Netherlands,7.9,17.1,75.0,3.3,10.1,86.6,,,0
+59,D,Türkiye,United States,19.4,25.8,54.8,25.9,23.3,50.8,,,0
+60,D,Paraguay,Australia,34.0,29.0,36.9,32.4,43.5,24.0,,,0
+61,I,Norway,France,23.2,27.3,49.6,19.6,21.6,58.8,,,0
+62,I,Senegal,Iraq,60.0,24.0,16.0,79.5,13.8,6.7,,,0
+63,H,Cabo Verde,Saudi Arabia,27.5,28.3,44.2,39.9,27.6,32.5,,,0
+64,H,Uruguay,Spain,11.5,20.7,67.9,12.6,22.3,65.1,,,0
+65,G,Egypt,Iran,32.3,29.0,38.7,39.4,35.8,24.9,,,0
+66,G,New Zealand,Belgium,11.1,20.3,68.6,5.5,12.6,82.0,,,0
+67,L,Panama,England,4.2,11.7,84.1,5.3,11.5,83.1,,,0
+68,L,Croatia,Ghana,59.1,24.3,16.5,55.1,28.1,16.9,,,0
+69,K,Colombia,Portugal,40.2,28.8,31.0,23.4,26.1,50.5,,,0
+70,K,DR Congo,Uzbekistan,45.8,28.1,26.2,52.8,23.9,23.3,,,0
+71,J,Algeria,Austria,34.2,29.0,36.7,24.4,41.6,34.0,,,0
+72,J,Jordan,Argentina,3.5,10.4,86.1,5.6,12.8,81.6,,,0
