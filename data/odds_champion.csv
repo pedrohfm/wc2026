@@ -1,36 +1,36 @@
 team,odds
 France,5.12
-Spain,6.6
-Argentina,7.08
-England,8.12
-Portugal,11.3
-Brazil,14.1
-Germany,15.4
-Netherlands,16.4
-United States,33.0
-Norway,35.4
+Spain,6.68
+Argentina,7.16
+England,8.36
+Portugal,11.1
+Brazil,13.8
+Netherlands,15.0
+Germany,17.2
+United States,31.6
+Norway,31.6
 Morocco,44.2
 Japan,46.6
-Colombia,53.6
+Mexico,54.6
+Colombia,55.6
 Belgium,58.6
-Mexico,59.2
-Switzerland,71.8
-Croatia,162.6
-Canada,173.6
-Senegal,174.6
-Côte d'Ivoire,188.6
-Australia,244.6
-Austria,260.6
-Sweden,264.6
-Uruguay,288.6
-Egypt,310.6
-Ecuador,352.6
-Ghana,438.6
-Paraguay,444.6
-Bosnia & Herzegovina,640.6
-Scotland,660.6
+Switzerland,73.8
+Croatia,154.6
+Ecuador,157.6
+Senegal,186.6
+Côte d'Ivoire,186.6
+Canada,205.6
+Australia,230.6
+Austria,236.6
+Sweden,238.6
+Uruguay,304.6
+Egypt,338.6
+Ghana,430.6
+Paraguay,490.6
+South Korea,568.6
 Algeria,660.6
-South Korea,680.6
+Scotland,710.6
+Bosnia & Herzegovina,712.6
 Iran,728.6
 South Africa,800.6
 DR Congo,900.6
@@ -38,5 +38,4 @@ Saudi Arabia,1200.6
 New Zealand,1200.6
 Cabo Verde,1300.6
 Uzbekistan,1500.5
-Curaçao,1900.6
 Iraq,1900.6
