@@ -462,7 +462,16 @@ class Component extends DCLogic {
 
   /* ---------- projected knockout bracket ---------- */
   projectGroups(){ const D=this.D; const G=this.computeGroups(); const out={}; const thirds=[];
-    Object.keys(G).forEach(g=>{ const list=Object.values(G[g].teams).map(x=>({t:x.t,Pts:x.Pts,GD:x.GF-x.GA,GF:x.GF,Elo:(D.info[x.t]||{}).Elo||0}));
+    // Rank on LIKELY FINAL standings: actual points so far + the model's expected
+    // points (3·P(win) + 1·P(draw)) for group matches not yet played. Without this,
+    // teams with a game in hand (groups still mid-round) are unfairly compared to
+    // teams who have finished, and the eight best third-placed qualifiers come out
+    // wrong. GF/GD stay from played matches only (no projected scoreline).
+    const ep={}; Object.keys(G).forEach(g=>{ ep[g]={}; Object.values(G[g].teams).forEach(x=>{ ep[g][x.t]={t:x.t,Pts:x.Pts,GD:x.GF-x.GA,GF:x.GF,Elo:(D.info[x.t]||{}).Elo||0}; }); });
+    (D.gm.rows||[]).forEach(r=>{ if(r.played) return; const g=r.group; if(!ep[g]||!ep[g][r.home]||!ep[g][r.away]) return;
+      const ph=(+r.m_home||0)/100, pd=(+r.m_draw||0)/100, pa=(+r.m_away||0)/100;
+      ep[g][r.home].Pts+=3*ph+pd; ep[g][r.away].Pts+=3*pa+pd; });
+    Object.keys(ep).forEach(g=>{ const list=Object.values(ep[g]);
       list.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||b.Elo-a.Elo);
       out[g]=list.map(x=>x.t);
       if(list[2]) thirds.push(Object.assign({g:g},list[2])); });
@@ -516,7 +525,7 @@ class Component extends DCLogic {
       h("div",{style:{font:"700 9px Inter",letterSpacing:".14em",textTransform:"uppercase",opacity:.85}},"Projected champion"),
       h("div",{onClick:champ?(()=>this.setState({detail:champ})):null,style:{display:"flex",alignItems:"center",gap:9,marginTop:8,cursor:champ?"pointer":"default"}}, champ?this.flag(champ,22):null, h("span",{style:{fontFamily:"Newsreader",fontWeight:600,fontSize:19,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},champ||"—"))));
     const canvas=h("div",{style:{position:"relative",width:totalW,height:totalH,minWidth:totalW}},svg,boxes);
-    const note=h("div",{style:{font:"500 12px Inter",color:"var(--mut)",marginTop:14,textWrap:"pretty"}},"Projected from the official FIFA slot structure: group winners and runners-up are read from current standings, the eight best third-placed teams are dropped into their official slots, and every match is resolved in favour of the side the model gives the higher championship probability (rating breaks exact ties) — so the projected champion is the same team the forecast names as favourite. The bracket firms up as group results land — click any team for its dossier.");
+    const note=h("div",{style:{font:"500 12px Inter",color:"var(--mut)",marginTop:14,textWrap:"pretty"}},"Projected from the official FIFA slot structure: group winners, runners-up and the eight best third-placed teams are projected from current standings plus the model's expected points for matches still to play, then dropped into their official slots, and every match is resolved in favour of the side the model gives the higher championship probability (rating breaks exact ties) — so the projected champion is the same team the forecast names as favourite. The bracket firms up as group results land — click any team for its dossier.");
     return h("div",{},h("div",{style:{overflowX:"auto",paddingBottom:6}},canvas),note); }
 
   renderVals(){
