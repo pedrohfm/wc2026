@@ -444,7 +444,7 @@ class Component extends DCLogic {
   teamRoad(t){ const D=this.D; if(!t) return []; return (D.gm.rows||[]).filter(r=>(r.home===t||r.away===t)&&r.played&&r.score&&(""+r.score).indexOf("-")>=0).map(r=>{ const home=r.home===t,opp=home?r.away:r.home,oc=r.actual; const win=(oc==="H"&&home)||(oc==="A"&&!home),dr=oc==="D"; return {opp,res:dr?"D":win?"W":"L",score:r.score}; }); }
   buildMatchModal(){ const h=React.createElement; const D=this.D; const m=this.state.matchModal; if(!m) return null; const sc=this.schedOf(m.no);
     const close=()=>this.setState({matchModal:null}); const A=m.home,B=m.away; const isKO=m.no>=73;
-    const CA="var(--accent)",CB="#3a7bd5",CD="#b9b3a4";
+    const C_MODEL="#3a7bd5",C_MARKET="#cf2e2e",C_DRAW="#b9b3a4"; const fade=c=>"color-mix(in srgb,"+c+" 30%,var(--soft))";
     const grp=t=> (t&&D.info[t]&&D.info[t].Grp)? "Group "+D.info[t].Grp : null;
     const SL=txt=>h("div",{style:{font:"700 10.5px Inter",letterSpacing:".1em",textTransform:"uppercase",color:"var(--mut)",margin:"18px 0 7px"}},txt);
     const teamMini=t=>h("div",{style:{display:"flex",flexDirection:"column",gap:2,minWidth:0}},
@@ -456,31 +456,30 @@ class Component extends DCLogic {
     /* win-probability bars (knockout: 2-way to advance; group: W/D/L) */
     const pctTxt=v=>(v>=9.95?Math.round(v):(+v).toFixed(1));
     const seg=parts=>h("div",{style:{flex:1,display:"flex",height:14,borderRadius:4,overflow:"hidden",background:"var(--soft)"}}, parts.map((p,i)=>h("span",{key:i,style:{width:Math.max(0,p.w)+"%",background:p.c}})));
-    const barRow=(lab,parts,right)=>h("div",{key:lab,style:{display:"flex",alignItems:"center",gap:9,margin:"6px 0"}},
-      h("span",{style:{width:50,flex:"none",font:"600 10px Inter",letterSpacing:".04em",textTransform:"uppercase",color:"var(--mut)"}},lab), seg(parts),
+    const barRow=(lab,parts,right,lc)=>h("div",{key:lab,style:{display:"flex",alignItems:"center",gap:9,margin:"6px 0"}},
+      h("span",{style:{width:50,flex:"none",font:"700 10px Inter",letterSpacing:".04em",textTransform:"uppercase",color:lc||"var(--mut)"}},lab), seg(parts),
       h("span",{style:{width:92,flex:"none",textAlign:"right",font:"600 11px Inter",fontVariantNumeric:"tabular-nums",color:"var(--mut)"}},right));
+    const sw=(c,t)=>h("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},h("span",{style:{width:10,height:10,borderRadius:3,background:c,flex:"none"}}),t);
     let prob=null;
     if(isKO && A && B){
       const mA=this.koWin(A,B,sc)*100, mB=100-mA;
       const cA=(D.market||{})[A]||0, cB=(D.market||{})[B]||0; const hasM=(cA+cB)>0.02; const kA=hasM?cA/(cA+cB)*100:null;
-      const legend=h("div",{style:{display:"flex",gap:14,flexWrap:"wrap",font:"500 12px Inter",color:"var(--mut)",margin:"0 0 8px"}},
-        h("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},h("span",{style:{width:10,height:10,borderRadius:3,background:CA,flex:"none"}}),this.flag(A,11),A),
-        h("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},h("span",{style:{width:10,height:10,borderRadius:3,background:CB,flex:"none"}}),this.flag(B,11),B));
+      const legend=h("div",{style:{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",font:"500 11.5px Inter",color:"var(--mut)",margin:"0 0 8px"}},
+        sw(C_MODEL,"Model"), sw(C_MARKET,"Market"), h("span",{style:{flex:1,minWidth:10}}),
+        h("span",{style:{display:"inline-flex",alignItems:"center",gap:5,minWidth:0}}, this.flag(A,11), h("span",{},A), h("span",{style:{opacity:.4,margin:"0 3px"}},"→"), this.flag(B,11), h("span",{},B)));
       prob=h("div",{}, SL("Win probability · to advance"), legend,
-        barRow("Model",[{w:mA,c:CA},{w:mB,c:CB}], pctTxt(mA)+" / "+pctTxt(mB)),
-        hasM? barRow("Market",[{w:kA,c:CA},{w:100-kA,c:CB}], pctTxt(kA)+" / "+pctTxt(100-kA))
+        barRow("Model",[{w:mA,c:C_MODEL},{w:mB,c:fade(C_MODEL)}], pctTxt(mA)+" / "+pctTxt(mB), C_MODEL),
+        hasM? barRow("Market",[{w:kA,c:C_MARKET},{w:100-kA,c:fade(C_MARKET)}], pctTxt(kA)+" / "+pctTxt(100-kA), C_MARKET)
             : h("div",{key:"nm",style:{font:"500 11px Inter",color:"var(--mut)",margin:"4px 0 0 59px"}},"Market — not available for this pairing"),
-        h("div",{style:{font:"500 11px Inter",color:"var(--mut)",marginTop:7,textWrap:"pretty"}},"Model: Elo win-expectancy (host edge applied). Market: implied from de-vigged outright odds."));
+        h("div",{style:{font:"500 11px Inter",color:"var(--mut)",marginTop:7,textWrap:"pretty"}},"Solid = "+A+" · faded = "+B+". Model: Elo win-expectancy (host edge applied). Market: implied from de-vigged outright odds."));
     } else if(!isKO){
       const gr=(D.gm.rows||[]).find(r=>r.match===m.no);
       if(gr){ const hasM=gr.mkt_home!=null&&gr.mkt_home!=="";
         const lg=h("div",{style:{display:"flex",gap:14,flexWrap:"wrap",font:"500 12px Inter",color:"var(--mut)",margin:"0 0 8px"}},
-          h("span",{style:{display:"inline-flex",alignItems:"center",gap:5}},h("span",{style:{width:10,height:10,borderRadius:3,background:CA}}),(A||"Home")+" win"),
-          h("span",{style:{display:"inline-flex",alignItems:"center",gap:5}},h("span",{style:{width:10,height:10,borderRadius:3,background:CD}}),"Draw"),
-          h("span",{style:{display:"inline-flex",alignItems:"center",gap:5}},h("span",{style:{width:10,height:10,borderRadius:3,background:CB}}),(B||"Away")+" win"));
+          sw(C_MODEL,(A||"Home")+" win"), sw(C_DRAW,"Draw"), sw(C_MARKET,(B||"Away")+" win"));
         prob=h("div",{}, SL("Win / draw / loss"), lg,
-          barRow("Model",[{w:gr.m_home,c:CA},{w:gr.m_draw,c:CD},{w:gr.m_away,c:CB}], pctTxt(gr.m_home)+" / "+pctTxt(gr.m_draw)+" / "+pctTxt(gr.m_away)),
-          hasM? barRow("Market",[{w:gr.mkt_home,c:CA},{w:gr.mkt_draw,c:CD},{w:gr.mkt_away,c:CB}], pctTxt(gr.mkt_home)+" / "+pctTxt(gr.mkt_draw)+" / "+pctTxt(gr.mkt_away)) : null); }
+          barRow("Model",[{w:gr.m_home,c:C_MODEL},{w:gr.m_draw,c:C_DRAW},{w:gr.m_away,c:C_MARKET}], pctTxt(gr.m_home)+" / "+pctTxt(gr.m_draw)+" / "+pctTxt(gr.m_away)),
+          hasM? barRow("Market",[{w:gr.mkt_home,c:C_MODEL},{w:gr.mkt_draw,c:C_DRAW},{w:gr.mkt_away,c:C_MARKET}], pctTxt(gr.mkt_home)+" / "+pctTxt(gr.mkt_draw)+" / "+pctTxt(gr.mkt_away)) : null); }
     }
     const roadCol=t=>{ const road=this.teamRoad(t); return h("div",{key:t||"x",style:{minWidth:0}},
       h("div",{style:{display:"inline-flex",alignItems:"center",gap:6,font:"700 12px Inter",marginBottom:6,minWidth:0,maxWidth:"100%"}}, this.flag(t,13), h("span",{style:{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}, t||"TBD"), grp(t)?h("span",{style:{font:"500 10px Inter",color:"var(--mut)",flex:"none"}}," · "+grp(t)):null),
