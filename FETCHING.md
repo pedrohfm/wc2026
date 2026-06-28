@@ -68,6 +68,39 @@ showed no signal, but that test is low-power; history fixes that).
 
 ---
 
+## 3. Match results — `scripts/fetch_results.py`
+
+Pulls finished World Cup results from **football-data.org** (v4) and writes them
+into `wc2026_results.xlsx`, so you don't have to type scores by hand.
+
+```
+export FOOTBALL_DATA_TOKEN=your_free_token      # from football-data.org
+python scripts/fetch_results.py                 # fill blank score cells + save
+python scripts/fetch_results.py --dry-run       # preview, write nothing
+python scripts/fetch_results.py --selftest      # offline parser checks
+```
+
+Design guarantees:
+
+- **Blank cells only.** It never overwrites a score you typed — manual entry and
+  auto-fetch coexist; whatever's already there wins.
+- **Correct mapping.** Group games map by team pair; knockout games are resolved
+  from results already entered using the official third-place allocation
+  (`config.THIRD_OVERRIDE`). It iterates, so one run can catch up several rounds.
+- **Correct scores.** Per the football-data docs, `fullTime` *includes* shootout
+  goals, so for a penalty shootout it writes the pre-shootout level score and
+  sets `PK Win` (H/A) from the winner; extra-time and regular finishes write
+  `fullTime` directly. Home/away orientation is matched to our fixture order.
+- **Secret-safe.** The token is read from `FOOTBALL_DATA_TOKEN` and never written
+  to disk — do **not** commit it (the repo is public).
+
+Free tier is 10 requests/minute; this makes one request per run. Team-name
+mismatches (if any) are printed so you can extend `NAME_MAP`. Companion script
+`scripts/fill_ko_labels.py` then rewrites the knockout fixture *labels* to the
+resolved team names. Both run automatically inside `daily.sh`.
+
+---
+
 ## Run them on a schedule
 
 A daily odds pull during the tournament is the high-value cadence (it captures
