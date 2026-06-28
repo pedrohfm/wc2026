@@ -6,6 +6,9 @@
 set -e
 cd "$(dirname "$0")/.."
 
+# Load API keys from a local .env if present (git-ignored; see .env.example).
+[ -f .env ] && set -a && . ./.env && set +a
+
 echo "==> 1/4  Refreshing odds"
 python3 scripts/fetch_odds.py || echo "  (odds pull skipped — set ODDS_API_KEY to enable)"
 

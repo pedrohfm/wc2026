@@ -27,12 +27,26 @@ python scripts/build_dashboard.py        # -> outputs/dashboard.html
 python -m pytest                         # 25 tests
 ```
 
+## API keys (results & odds)
+
+Two optional free keys power the automated feeds. Copy `.env.example` to `.env`,
+fill them in, and you're done — `daily.sh` loads `.env` automatically. **Never
+commit `.env`** (it's git-ignored). The pipeline runs fine without keys, just
+without auto-fetched results/odds.
+
+- `FOOTBALL_DATA_TOKEN` — auto-fetch match results. Free token: https://www.football-data.org/client/register
+- `ODDS_API_KEY` — bookmaker odds. Free key: https://the-odds-api.com/
+
+```bash
+cp .env.example .env        # then edit .env and paste your keys
+```
+
 ## Daily loop (with the live site)
 
 ```bash
-# 0. enter finished scores in wc2026_results.xlsx, save
-export ODDS_API_KEY=xxxxx                 # once per session
-bash scripts/daily.sh                      # odds -> forecast -> dashboard -> deploy
+# results auto-fetch from football-data.org; manual score entry is optional.
+# keep Excel CLOSED while running (the results file gets written to).
+bash scripts/daily.sh                      # results -> odds -> forecast -> dashboard -> deploy
 ```
 
 ## Docs
