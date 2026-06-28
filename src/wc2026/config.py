@@ -31,5 +31,8 @@ MARKET_ODDS = {k: v for k, v in MARKET_ODDS.items() if v and v > 1}
 # single official one. Set once the group stage is complete and the eight
 # qualifying third-placed groups are known; here for {B,D,E,F,G,I,J,L}.
 # Set to None to fall back to the engine's approximation (reversible).
-THIRD_OVERRIDE = {74: "D", 77: "F", 79: "E", 80: "J",
-                  81: "B", 82: "I", 85: "G", 87: "L"}
+# Qualifying third-placed groups {B,D,E,F,I,J,K,L}: DR Congo (K) went through,
+# Iran (G) was eliminated. Congo -> slot 80 (vs England), Algeria (J) -> slot 85
+# (vs Switzerland); the other six are unchanged and confirmed vs the published bracket.
+THIRD_OVERRIDE = {74: "D", 77: "F", 79: "E", 80: "K",
+                  81: "B", 82: "I", 85: "J", 87: "L"}

@@ -22,7 +22,13 @@ Setup (token is a secret — never commit it):
 Run:
     python scripts/fetch_results.py            # fetch + fill blanks + save
     python scripts/fetch_results.py --dry-run  # show what it would write
+    python scripts/fetch_results.py --overwrite  # also CORRECT cells that disagree
+                                                 # with the API (fixes bad entries)
     python scripts/fetch_results.py --selftest # offline parser checks, no network
+
+--overwrite is the reconcile mode: where a score already in the file differs from
+the authoritative API result, it replaces it (and reports the change). Use it to
+fix a wrong entry; the default (blank-only) protects manual edits.
 """
 from __future__ import annotations
 import os, sys, json, unicodedata, urllib.request, urllib.error
@@ -197,7 +203,7 @@ def _open_sheet():
     return wb, ws, cols, row_of
 
 
-def run(dry=False):
+def run(dry=False, overwrite=False):
     matches, rem = fetch_finished()
     print(f"  football-data: {len(matches)} finished WC match(es) returned"
           + (f"  ({rem} API requests left this minute)" if rem else ""))
@@ -224,21 +230,29 @@ def run(dry=False):
             row = row_of.get(m)
             if row is None:
                 continue
-            if ws.cell(row, cols["hg"]).value not in (None, "") or \
-               ws.cell(row, cols["ag"]).value not in (None, ""):
-                continue                          # already filled — leave it
             parsed = parse_score(am.get("score") or {}, direct)
             if parsed is None:
                 continue
             gh, ga, pk = parsed
             uh, ua = (oh, oa) if direct else (oa, oh)     # our home/away orientation
-            label = f"M{m}: {uh} {gh}-{ga} {ua}" + (f" (PK {pk})" if pk else "")
-            print(f"    + {label}")
+            cur_h, cur_a = ws.cell(row, cols["hg"]).value, ws.cell(row, cols["ag"]).value
+            filled = cur_h not in (None, "") or cur_a not in (None, "")
+            if filled:
+                try:
+                    same = int(float(cur_h)) == gh and int(float(cur_a)) == ga
+                except (TypeError, ValueError):
+                    same = False
+                if same or not overwrite:
+                    continue                      # matches, or protect manual entry
+                tag = f"~ M{m}: {uh} {cur_h}-{cur_a} {ua}  ->  {gh}-{ga}"
+            else:
+                tag = f"+ M{m}: {uh} {gh}-{ga} {ua}"
+            print(f"    {tag}" + (f" (PK {pk})" if pk else ""))
             if not dry:
                 ws.cell(row, cols["hg"]).value = gh
                 ws.cell(row, cols["ag"]).value = ga
-                if pk and cols["pk"]:
-                    ws.cell(row, cols["pk"]).value = pk
+                if cols["pk"]:
+                    ws.cell(row, cols["pk"]).value = pk if pk else None
             wrote += 1
         total += wrote
         if wrote and not dry:
@@ -247,10 +261,11 @@ def run(dry=False):
             break
     if unmatched:
         print("  [!] unmatched team names (add to NAME_MAP): " + "; ".join(sorted(unmatched)))
+    mode = "added/corrected" if overwrite else "added (blank cells only)"
     if dry:
-        print(f"\n  [dry run] {total} result(s) would be written.")
+        print(f"\n  [dry run] {total} result(s) would be {mode}.")
     else:
-        print(f"\n  Wrote {total} new result(s) into {os.path.basename(XLSX)} (blank cells only).")
+        print(f"\n  Wrote {total} result(s) into {os.path.basename(XLSX)} ({mode}).")
 
 
 # --------------------------------------------------------------- offline tests
@@ -295,7 +310,7 @@ def main():
     if "--selftest" in sys.argv:
         sys.exit(0 if _selftest() else 1)
     try:
-        run(dry="--dry-run" in sys.argv)
+        run(dry="--dry-run" in sys.argv, overwrite="--overwrite" in sys.argv)
     except (RuntimeError, PermissionError, OSError) as ex:
         print(f"  [skip] {ex}")
 
