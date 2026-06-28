@@ -13,7 +13,7 @@ original. Public API mirrors the old module, so:
 
 # --- tunable parameters & market odds ---
 from .config import (SIGMA_TEAM, SIGMA_CONF, GOAL_SCALE, HOME_ADV, K_FACTOR,
-                     ITERATIONS, SEED, MARKET_ODDS)
+                     ITERATIONS, SEED, MARKET_ODDS, THIRD_OVERRIDE)
 
 # --- structure ---
 from .structure import (GROUP_FIXTURES, KO, THIRD_SLOTS, HOSTS, CONF, GROUPS,
@@ -50,7 +50,7 @@ from .io import (load_elo, load_results, _coerce_results, show_fixtures,
 
 __all__ = [
     "SIGMA_TEAM", "SIGMA_CONF", "GOAL_SCALE", "HOME_ADV", "K_FACTOR",
-    "ITERATIONS", "SEED", "MARKET_ODDS",
+    "ITERATIONS", "SEED", "MARKET_ODDS", "THIRD_OVERRIDE",
     "GROUP_FIXTURES", "KO", "THIRD_SLOTS", "HOSTS", "CONF", "GROUPS",
     "R32", "R16", "QFM", "SFM",
     "win_expectancy", "expected_goals", "sim_score", "sim_knockout", "update_elo",

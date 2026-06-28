@@ -522,7 +522,14 @@ class Component extends DCLogic {
       if(list[2]) thirds.push(Object.assign({g:g},list[2])); });
     thirds.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||b.Elo-a.Elo);
     return {pos:out,thirds:thirds.slice(0,8)}; }
-  assignThirds(proj){ const slots=[["A","CEFHI"],["B","EFGIJ"],["D","BEFIJ"],["E","ABCDF"],["G","AEHIJ"],["I","CDFGH"],["K","DEIJL"],["L","EHIJK"]];
+  assignThirds(proj){
+    // Official FIFA allocation (winner-group -> qualifying third's group) when it
+    // matches the actual eight qualifiers; otherwise fall back to a valid matching.
+    const ov=this.D.thirdOverride;
+    if(ov && Object.keys(ov).length===8){ const byG={}; proj.thirds.forEach(x=>byG[x.g]=x.t);
+      if(Object.values(ov).slice().sort().join("")===proj.thirds.map(x=>x.g).sort().join("")){
+        const a={}; Object.keys(ov).forEach(wg=>{ if(byG[ov[wg]]) a[wg]=byG[ov[wg]]; }); return a; } }
+    const slots=[["A","CEFHI"],["B","EFGIJ"],["D","BEFIJ"],["E","ABCDF"],["G","AEHIJ"],["I","CDFGH"],["K","DEIJL"],["L","EHIJK"]];
     const thirds=proj.thirds.map(x=>({g:x.g,t:x.t})); const assign={}; const used=new Array(thirds.length).fill(false);
     const bt=si=>{ if(si>=slots.length) return true; const sg=slots[si][0],allow=slots[si][1];
       for(let i=0;i<thirds.length;i++){ if(!used[i]&&allow.indexOf(thirds[i].g)>=0){ used[i]=true; assign[sg]=thirds[i].t; if(bt(si+1)) return true; used[i]=false; delete assign[sg]; } } return false; };

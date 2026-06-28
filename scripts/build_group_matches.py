@@ -71,7 +71,7 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     elo0 = E.load_elo(ELO_CSV)
     kg, kk = E.load_results(RESULTS)
-    elo = E.apply_known_results(elo0, kg, kk) if (kg or kk) else dict(elo0)
+    elo = E.apply_known_results(elo0, kg, kk, E.THIRD_OVERRIDE) if (kg or kk) else dict(elo0)
     gm = E.GoalsModel.load(PARAMS) if os.path.exists(PARAMS) else None
     market = load_market()
 

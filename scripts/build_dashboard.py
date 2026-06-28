@@ -24,6 +24,18 @@ try:
     from wc2026.blend import shin_probs            # Shin (1992) margin removal
 except Exception:
     shin_probs = None
+try:
+    from wc2026.config import THIRD_OVERRIDE        # official R32 3rd-place slots
+    from wc2026.structure import KO as _KO
+    # slot match-number -> winning group it faces; lets the site map the official
+    # override (match->3rd group) to the design's (winner-group->3rd group) form
+    _SLOT_WINNER = {m: (hs[1] if hs[0] == "W" else as_[1])
+                    for m, (rnd, hs, as_) in _KO.items()
+                    if rnd == "R32" and "3" in (hs[0], as_[0])}
+    THIRD_OVERRIDE_DESIGN = {_SLOT_WINNER[m]: g for m, g in (THIRD_OVERRIDE or {}).items()
+                             if m in _SLOT_WINNER}
+except Exception:
+    THIRD_OVERRIDE_DESIGN = {}
 OUT = os.path.join(ROOT, "outputs")
 ODDS = os.path.join(ROOT, "data", "odds_champion.csv")
 SCHED = os.path.join(ROOT, "data", "schedule.csv")
@@ -145,6 +157,7 @@ def build_data():
         "market": market_probs(),
         "gm": collect_group(),
         "sched": collect_schedule(),
+        "thirdOverride": THIRD_OVERRIDE_DESIGN,
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 

@@ -197,7 +197,8 @@ def main():
     print(f"  rating uncertainty: sigma_team={st:.0f}, sigma_conf={sc:.0f}  [{sigma_src}]")
     probs = E.run_monte_carlo(elo, iterations=iters, seed=7, kg=kg, kk=kk,
                               goals_model=model, home_adv=args.host_adv,
-                              sigma_team=st, sigma_conf=sc, verbose=False)
+                              sigma_team=st, sigma_conf=sc,
+                              third_override=E.THIRD_OVERRIDE, verbose=False)
     probs = with_standard_errors(probs, iters)
     show = ["Elo", "Conf", "Grp", "SF", "Final", "Win", "Win_SE"]
     print(probs[show].head(16).to_string())

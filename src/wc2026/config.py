@@ -22,3 +22,14 @@ MARKET_ODDS = {
     "Italy": 0,  # not in WC; ignored if 0/absent
 }
 MARKET_ODDS = {k: v for k, v in MARKET_ODDS.items() if v and v > 1}
+
+# ---------------------------------------------------------------------------
+# Official Round-of-32 third-place allocation (FIFA Annex C).
+# Maps each R32 match number that hosts a third-placed team to the GROUP whose
+# third-placed team fills that slot. The engine's allocate_thirds() only finds
+# *a* valid matching (28 are valid for the current qualifiers) — this pins the
+# single official one. Set once the group stage is complete and the eight
+# qualifying third-placed groups are known; here for {B,D,E,F,G,I,J,L}.
+# Set to None to fall back to the engine's approximation (reversible).
+THIRD_OVERRIDE = {74: "D", 77: "F", 79: "E", 80: "J",
+                  81: "B", 82: "I", 85: "G", 87: "L"}
