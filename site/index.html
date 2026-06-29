@@ -474,17 +474,24 @@ class Component extends DCLogic {
     const sw=(c,t)=>h("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},h("span",{style:{width:10,height:10,borderRadius:3,background:c,flex:"none"}}),t);
     let prob=null;
     if(isKO && A && B){
-      const mA=this.koWin(A,B,sc)*100, mB=100-mA;
+      const wdl = kr && kr.wdl;                          // regulation [home win, draw, away win] %
+      const s = this.koWin(A,B,sc);                       // A's strength share — resolves the draw branch
+      const mA = wdl ? (wdl[0]+wdl[1]*s) : s*100, mB = 100-mA;
       const cA=(D.market||{})[A]||0, cB=(D.market||{})[B]||0; const hasM=(cA+cB)>0.02; const kA=hasM?cA/(cA+cB)*100:null;
       const swatch=(c,team)=>h("span",{style:{display:"inline-flex",alignItems:"center",gap:6,minWidth:0}},h("span",{style:{width:11,height:11,borderRadius:3,background:c,flex:"none"}}),this.flag(team,11),h("span",{style:{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},team));
       const legend=h("div",{style:{display:"grid",gridTemplateColumns:"auto minmax(0,1fr) minmax(0,1fr)",gap:"6px 12px",alignItems:"center",margin:"2px 0 10px",font:"500 11.5px Inter",color:"var(--ink)"}},
         h("span",{style:{font:"700 10px Inter",letterSpacing:".08em",textTransform:"uppercase",color:BLUE}},"Model"), swatch(BLUE,A), swatch(ORANGE,B),
         h("span",{style:{font:"700 10px Inter",letterSpacing:".08em",textTransform:"uppercase",color:RED}},"Market"), swatch(RED,A), swatch(GREEN,B));
+      const reg = wdl ? h("div",{},
+        SL("Result after 90 minutes · model"),
+        barRow("90′",[{w:wdl[0],c:BLUE},{w:wdl[1],c:GRAY},{w:wdl[2],c:ORANGE}], pctTxt(wdl[0])+" / "+pctTxt(wdl[1])+" / "+pctTxt(wdl[2]), "var(--mut)"),
+        h("div",{style:{font:"500 11px Inter",color:"var(--mut)",marginTop:4,textWrap:"pretty"}}, "Blue "+A+" win · grey draw (→ extra time, then penalties) · orange "+B+" win.")) : null;
       prob=h("div",{}, SL("Win probability · to advance"), legend,
         barRow("Model",[{w:mA,c:BLUE},{w:mB,c:ORANGE}], pctTxt(mA)+" / "+pctTxt(mB), BLUE),
         hasM? barRow("Market",[{w:kA,c:RED},{w:100-kA,c:GREEN}], pctTxt(kA)+" / "+pctTxt(100-kA), RED)
             : h("div",{key:"nm",style:{font:"500 11px Inter",color:"var(--mut)",margin:"4px 0 0 59px"}},"Market — not available for this pairing"),
-        h("div",{style:{font:"500 11px Inter",color:"var(--mut)",marginTop:8,textWrap:"pretty"}}, A+" is the left segment of each bar, "+B+" the right. Model = Elo win-expectancy (host edge only for WC hosts on home soil); Market = implied from de-vigged outright odds."));
+        h("div",{style:{font:"500 11px Inter",color:"var(--mut)",marginTop:8,textWrap:"pretty"}}, "“To advance” includes extra time and penalties, so it runs higher than the 90-minute win chance by part of the draw. Model = Elo + Dixon-Coles; Market = implied from de-vigged outright odds."),
+        reg);
     } else if(!isKO){
       const gr=(D.gm.rows||[]).find(r=>r.match===m.no);
       if(gr){ const hasM=gr.mkt_home!=null&&gr.mkt_home!=="";

@@ -65,6 +65,17 @@ def collect_ko():
         qual = {g: t for g, t, _ in thirds[:8]}
         slot_group = dict(THIRD_OVERRIDE) if THIRD_OVERRIDE else E.allocate_thirds(list(qual))
         slot_team = {m: qual.get(g) for m, g in slot_group.items()}
+        # goals model + venue map for the regulation-time W/D/L (chance of a draw
+        # after 90', i.e. going to extra time) shown on the knockout card
+        params_path = os.path.join(ROOT, "params", "goals_params.json")
+        gmod = E.GoalsModel.load(params_path) if os.path.exists(params_path) else None
+        scountry = {}
+        if os.path.exists(SCHED):
+            try:
+                sdf = pd.read_csv(SCHED)
+                scountry = {int(r["match"]): str(r["country"]) for _, r in sdf.iterrows()}
+            except Exception:
+                scountry = {}
         pens = {}
         if os.path.exists(KO_PENS):
             try:
@@ -80,6 +91,12 @@ def collect_ko():
                         "WIN": mwin.get(ref), "LOSE": mlose.get(ref)}[typ]
             home, away = part(hs), part(as_)
             rec = {"round": rnd, "home": home, "away": away, "played": m in kk}
+            if gmod is not None and home and away:
+                country = scountry.get(m, "")
+                hh = 60 if (home in E.HOSTS and country == home) else 0
+                aa = 60 if (away in E.HOSTS and country == away) else 0
+                pH, pD, pA = gmod.wdl(e.get(home, 1500) + hh - aa, e.get(away, 1500))
+                rec["wdl"] = [round(pH * 100, 1), round(pD * 100, 1), round(pA * 100, 1)]
             if m in kk:
                 ga, gb, pk = kk[m]
                 if ga > gb: w = home
