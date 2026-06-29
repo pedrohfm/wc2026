@@ -39,7 +39,61 @@ except Exception:
 OUT = os.path.join(ROOT, "outputs")
 ODDS = os.path.join(ROOT, "data", "odds_champion.csv")
 SCHED = os.path.join(ROOT, "data", "schedule.csv")
+ELO_CSV = os.path.join(ROOT, "wc2026_elo.csv")
+RESULTS = os.path.join(ROOT, "wc2026_results.xlsx")
+KO_PENS = os.path.join(OUT, "ko_penalties.json")
 ROUNDS = ["R32", "R16", "QF", "SF", "Final", "Win"]
+
+
+def collect_ko():
+    """Resolved knockout bracket + results for matches 73-104, advancing ACTUAL
+       winners as results are entered. Each entry: {round, home, away, winner,
+       played, hg, ag, pkwin, pens}. Returns {} if the engine/results aren't
+       available. Powers the bracket and the match card (score + highlights)."""
+    try:
+        import wc2026 as E
+        from wc2026.structure import KO as KODEF
+        from wc2026.elo_dynamics import _deterministic_groups
+        elo = E.load_elo(ELO_CSV)
+        kg, kk = E.load_results(RESULTS)
+        e = E.apply_known_results(elo, kg, kk, THIRD_OVERRIDE)
+        res = _deterministic_groups(e, kg)
+        if res is None:
+            return {}
+        winners, runners, thirds = res
+        thirds.sort(key=lambda x: (x[2]["pts"], x[2]["gd"], x[2]["gf"], e[x[1]]), reverse=True)
+        qual = {g: t for g, t, _ in thirds[:8]}
+        slot_group = dict(THIRD_OVERRIDE) if THIRD_OVERRIDE else E.allocate_thirds(list(qual))
+        slot_team = {m: qual.get(g) for m, g in slot_group.items()}
+        pens = {}
+        if os.path.exists(KO_PENS):
+            try:
+                pens = json.load(open(KO_PENS))
+            except Exception:
+                pens = {}
+        mwin, mlose, out = {}, {}, {}
+        for m in sorted(KODEF):
+            rnd, hs, as_ = KODEF[m]
+            def part(slot):
+                typ, ref = slot
+                return {"W": winners.get(ref), "RU": runners.get(ref), "3": slot_team.get(ref),
+                        "WIN": mwin.get(ref), "LOSE": mlose.get(ref)}[typ]
+            home, away = part(hs), part(as_)
+            rec = {"round": rnd, "home": home, "away": away, "played": m in kk}
+            if m in kk:
+                ga, gb, pk = kk[m]
+                if ga > gb: w = home
+                elif gb > ga: w = away
+                else: w = home if pk == "H" else (away if pk == "A" else
+                          (home if e.get(home, 0) >= e.get(away, 0) else away))
+                mwin[m] = w; mlose[m] = away if w == home else home
+                rec.update(hg=int(ga), ag=int(gb), pkwin=pk, winner=w)
+                if pk and str(m) in pens:
+                    rec["pens"] = pens[str(m)]
+            out[str(m)] = rec
+        return out
+    except Exception:
+        return {}
 
 
 def collect_schedule():
@@ -157,6 +211,7 @@ def build_data():
         "market": market_probs(),
         "gm": collect_group(),
         "sched": collect_schedule(),
+        "ko": collect_ko(),
         "thirdOverride": THIRD_OVERRIDE_DESIGN,
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }

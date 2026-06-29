@@ -41,6 +41,7 @@ from wc2026.elo_dynamics import _deterministic_groups
 
 XLSX = os.path.join(ROOT, "wc2026_results.xlsx")
 ELO_CSV = os.path.join(ROOT, "wc2026_elo.csv")
+KO_PENS = os.path.join(ROOT, "outputs", "ko_penalties.json")
 BASE = "https://api.football-data.org/v4"
 COMP = "WC"
 
@@ -115,6 +116,16 @@ def parse_score(score, direct):
     if direct:
         return (gh, ga, pk)
     return (ga, gh, ("A" if pk == "H" else "H" if pk == "A" else None))
+
+
+def parse_pens(score, direct):
+    """Penalty-shootout score as 'home-away' in OUR orientation, or None."""
+    if not isinstance(score, dict) or score.get("duration") != "PENALTY_SHOOTOUT":
+        return None
+    ph, pa = _ha(score.get("penalties"))
+    if ph is None or pa is None:
+        return None
+    return f"{int(ph)}-{int(pa)}" if direct else f"{int(pa)}-{int(ph)}"
 
 
 def resolved_fixtures():
@@ -211,7 +222,7 @@ def run(dry=False, overwrite=False):
         print("  Nothing finished yet — nothing to write.")
         return
     wb, ws, cols, row_of = _open_sheet()
-    filled, unmatched, total = 0, set(), 0
+    filled, unmatched, total, pens_map = 0, set(), 0, {}
     for _pass in range(1 if dry else 8):         # iterate so later rounds resolve
         fx, kg, kk = resolved_fixtures()
         wrote = 0
@@ -230,6 +241,10 @@ def run(dry=False, overwrite=False):
             row = row_of.get(m)
             if row is None:
                 continue
+            if m >= 73:                           # capture shootout score for the card
+                pp = parse_pens(am.get("score") or {}, direct)
+                if pp:
+                    pens_map[str(m)] = pp
             parsed = parse_score(am.get("score") or {}, direct)
             if parsed is None:
                 continue
@@ -259,6 +274,9 @@ def run(dry=False, overwrite=False):
             wb.save(XLSX)
         if not wrote:
             break
+    if pens_map and not dry:                       # side file: exact shootout scores for the card
+        os.makedirs(os.path.dirname(KO_PENS), exist_ok=True)
+        json.dump(pens_map, open(KO_PENS, "w"))
     if unmatched:
         print("  [!] unmatched team names (add to NAME_MAP): " + "; ".join(sorted(unmatched)))
     mode = "added/corrected" if overwrite else "added (blank cells only)"
