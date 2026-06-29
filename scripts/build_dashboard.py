@@ -131,6 +131,61 @@ def collect_schedule():
     return out
 
 
+def compute_perf(gm, ko):
+    """Live predictive-power scorecard: score the model's PRE-MATCH 90-minute
+       W/D/L probabilities against ACTUAL results for every played match (group +
+       knockout), plus exact-score hit rate. Benchmarks: a coin, the base rate,
+       and the market (on the subset with odds). All out-of-sample by construction."""
+    import math
+    def ll1(p): return -math.log(max(p, 1e-12))
+    def norm(p): s = sum(p) or 1.0; return [x / s for x in p]
+    ev = []   # (model[3], outcome 0/1/2, market[3] or None, pred_score, actual_score)
+    for r in (gm or {}).get("rows", []):
+        if not r.get("played") or not r.get("score"):
+            continue
+        try:
+            hg, ag = map(int, str(r["score"]).split("-"))
+        except ValueError:
+            continue
+        oc = 0 if hg > ag else (1 if hg == ag else 2)
+        mp = norm([(r.get("m_home") or 0), (r.get("m_draw") or 0), (r.get("m_away") or 0)])
+        kp = None
+        if r.get("mkt_home") not in (None, ""):
+            kp = norm([r["mkt_home"], r["mkt_draw"], r["mkt_away"]])
+            if kp[1] > kp[0] and kp[1] > kp[2]:    # corrupted draw-favourite odds
+                kp = None
+        ev.append((mp, oc, kp, r.get("pred"), r["score"]))
+    for k in (ko or {}).values():
+        if not k.get("played") or "wdl" not in k or k.get("hg") is None:
+            continue
+        hg, ag = k["hg"], k["ag"]
+        oc = 0 if hg > ag else (1 if hg == ag else 2)
+        ev.append((norm(k["wdl"]), oc, None, k.get("pred"), "%d-%d" % (hg, ag)))
+    n = len(ev)
+    if n == 0:
+        return {}
+    cnt = [sum(1 for e in ev if e[1] == c) for c in (0, 1, 2)]
+    base = [c / n for c in cnt]
+    model_ll = sum(ll1(e[0][e[1]]) for e in ev) / n
+    base_ll = sum(ll1(base[e[1]] if base[e[1]] > 0 else 1e-12) for e in ev) / n
+    brier = sum(sum((e[0][c] - (1 if c == e[1] else 0)) ** 2 for c in range(3)) for e in ev) / n
+    acc = sum(1 for e in ev if max(range(3), key=lambda c: e[0][c]) == e[1]) / n
+    exact_ev = [e for e in ev if e[3]]
+    exact = (sum(1 for e in exact_ev if e[3] == e[4]) / len(exact_ev)) if exact_ev else None
+    mev = [e for e in ev if e[2]]
+    market = None
+    if len(mev) >= 5:
+        market = {"n": len(mev),
+                  "market_ll": round(sum(ll1(e[2][e[1]]) for e in mev) / len(mev), 4),
+                  "model_ll": round(sum(ll1(e[0][e[1]]) for e in mev) / len(mev), 4)}
+    return {"n": n, "n_exact": len(exact_ev), "acc": round(acc, 3),
+            "model_ll": round(model_ll, 4), "base_ll": round(base_ll, 4),
+            "coin_ll": round(math.log(3), 4), "brier": round(brier, 4),
+            "skill_vs_base": round(1 - model_ll / base_ll, 3) if base_ll > 0 else None,
+            "exact": (round(exact, 3) if exact is not None else None),
+            "market": market}
+
+
 def _load(path):
     df = pd.read_csv(path, index_col=0)
     df.index = df.index.astype(str)
@@ -228,13 +283,15 @@ def build_data():
             for r in ROUNDS:
                 v = float(df.loc[t, r]) if (t in df.index and r in df.columns) else None
                 series[t][r].append(v)
+    gm_data, ko_data = collect_group(), collect_ko()
     return {
         "labels": labels, "dates": dates, "rounds": ROUNDS,
         "teams": teams, "info": info, "series": series,
         "market": market_probs(),
-        "gm": collect_group(),
+        "gm": gm_data,
         "sched": collect_schedule(),
-        "ko": collect_ko(),
+        "ko": ko_data,
+        "perf": compute_perf(gm_data, ko_data),
         "thirdOverride": THIRD_OVERRIDE_DESIGN,
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }

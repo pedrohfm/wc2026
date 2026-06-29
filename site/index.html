@@ -128,6 +128,17 @@
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(20,18,12,.04),0 18px 40px -26px rgba(20,18,12,.28)">{{ groupMatches }}</div>
     </section>
 
+    <section style="margin-top:34px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+        <div>
+          <div style="font:700 11px/1 Inter;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">Track record · live</div>
+          <h2 style="font-family:Newsreader;font-weight:500;font-size:clamp(22px,3vw,28px);letter-spacing:-.01em;margin:7px 0 0">How the forecasts are holding up</h2>
+        </div>
+        <div style="font:500 13px Inter;color:var(--mut);max-width:340px;text-align:right">Every completed match this tournament, scored against the model's pre-match call. Refreshed daily.</div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(20,18,12,.04),0 18px 40px -26px rgba(20,18,12,.28)">{{ perf }}</div>
+    </section>
+
     <footer style="color:var(--mut);font-size:12px;line-height:1.7;margin-top:40px;border-top:1px solid var(--line);padding-top:18px;text-align:center">
       © 2026 Pedro Henrique Figueiredo Magalhães · Independent research project, not affiliated with or endorsed by FIFA.<br>
       Probabilities are Monte-Carlo estimates for informational and educational purposes — not betting advice. Small day-to-day moves are simulation noise. &nbsp;·&nbsp; <a href="methodology.html" style="color:var(--accent);text-decoration:none;font-weight:600">Methodology &amp; data sources →</a>
@@ -397,6 +408,31 @@ class Component extends DCLogic {
       h("span",{},h("b",{},"Market")," ",key(MKT.hh,"home"),key(MKT.dd,"draw"),key(MKT.aa,"away")));
     return h("div",{},sel,legend,blocks); }
 
+  /* ---------- live predictive-power scorecard ---------- */
+  buildPerf(){ const h=React.createElement; const p=this.D.perf;
+    if(!p||!p.n) return h("div",{style:{font:"500 13px Inter",color:"var(--mut)"}},"No completed matches scored yet — this fills in as games are played.");
+    const stat=(big,lbl)=>h("div",{style:{flex:"1 1 130px"}},h("div",{style:{font:"800 27px Inter",letterSpacing:"-.02em",fontVariantNumeric:"tabular-nums"}},big),h("div",{style:{font:"500 11.5px Inter",color:"var(--mut)",marginTop:2}},lbl));
+    const strip=h("div",{style:{display:"flex",gap:18,flexWrap:"wrap",paddingBottom:16,borderBottom:"1px solid var(--line)",marginBottom:16}},
+      stat(p.n,"matches scored"),
+      stat(Math.round(p.acc*100)+"%","outcome called right"),
+      stat(p.exact!=null?Math.round(p.exact*100)+"%":"—","exact score nailed"),
+      stat((p.skill_vs_base>=0?"+":"")+Math.round(p.skill_vs_base*100)+"%","better than base rate"));
+    const mx=Math.max(p.coin_ll,p.base_ll,p.model_ll,(p.market?p.market.market_ll:0))||1;
+    const bar=(lab,v,c,me)=>h("div",{key:lab,style:{display:"flex",alignItems:"center",gap:10,margin:"5px 0"}},
+      h("span",{style:{width:104,flex:"none",font:(me?"700 ":"500 ")+"12px Inter",color:me?"var(--ink)":"var(--mut)"}},lab),
+      h("span",{style:{flex:1,height:12,background:"var(--soft)",borderRadius:4,overflow:"hidden"}},h("span",{style:{display:"block",height:"100%",width:(v/mx*100)+"%",background:c,borderRadius:4}})),
+      h("span",{style:{width:50,textAlign:"right",font:"600 12px Inter",fontVariantNumeric:"tabular-nums",color:me?"var(--ink)":"var(--mut)"}},v.toFixed(3)));
+    const bars=h("div",{},
+      h("div",{style:{font:"700 10.5px Inter",letterSpacing:".06em",textTransform:"uppercase",color:"var(--mut)",margin:"2px 0 8px"}},"Log loss · lower is better"),
+      bar("Model",p.model_ll,"var(--accent)",true),
+      bar("Base rate",p.base_ll,"var(--mut)"),
+      bar("Coin (⅓ each)",p.coin_ll,"var(--line)"));
+    const verdict=p.market?h("div",{style:{marginTop:14,padding:"10px 13px",borderRadius:9,background:"var(--soft)",font:"500 12.5px Inter",color:"var(--ink)",textWrap:"pretty"}},
+      "Versus the betting market on "+p.market.n+" matches with odds: model log loss "+p.market.model_ll.toFixed(3)+" vs market "+p.market.market_ll.toFixed(3)+" — "+(p.market.model_ll<p.market.market_ll?"the model is ahead.":(p.market.model_ll>p.market.market_ll?"the market is ahead.":"dead level."))):null;
+    return h("div",{},strip,bars,verdict,
+      h("div",{style:{font:"500 11px Inter",color:"var(--mut)",marginTop:12,textWrap:"pretty"}},"Live, this tournament only: every completed group and knockout match scored against the model's pre-match 90-minute probabilities. A small sample that sharpens with each match; the 24-year out-of-sample record is on the methodology page."));
+  }
+
   /* ---------- model accuracy ---------- */
   buildCalibration(){ const h=React.createElement; const T=this.state.introT;
     const stat=(big,lbl)=>h("div",{style:{flex:"1 1 130px"}},h("div",{style:{fontFamily:"Inter",fontWeight:800,fontSize:30,letterSpacing:"-.02em",fontVariantNumeric:"tabular-nums"}},big),h("div",{style:{font:"500 12px Inter",color:"var(--mut)",marginTop:2}},lbl));
@@ -627,6 +663,7 @@ class Component extends DCLogic {
       market:this.buildMarket(),
       groupStandings:this.buildGroupStandings(),
       groupMatches:this.buildGroupMatches(),
+      perf:this.buildPerf(),
       calibration:this.buildCalibration(),
       detail:this.buildDetail(),
       matchModal:this.buildMatchModal()
