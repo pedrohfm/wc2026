@@ -95,8 +95,11 @@ def collect_ko():
                 country = scountry.get(m, "")
                 hh = 60 if (home in E.HOSTS and country == home) else 0
                 aa = 60 if (away in E.HOSTS and country == away) else 0
-                pH, pD, pA = gmod.wdl(e.get(home, 1500) + hh - aa, e.get(away, 1500))
+                eh, ea = e.get(home, 1500) + hh - aa, e.get(away, 1500)
+                pH, pD, pA = gmod.wdl(eh, ea)
                 rec["wdl"] = [round(pH * 100, 1), round(pD * 100, 1), round(pA * 100, 1)]
+                pi, pj = gmod.most_likely(eh, ea); la, lb = gmod.lambdas(eh, ea)
+                rec["pred"] = "%d-%d" % (pi, pj); rec["xg"] = [round(la, 1), round(lb, 1)]
             if m in kk:
                 ga, gb, pk = kk[m]
                 if ga > gb: w = home
@@ -196,6 +199,9 @@ def collect_group():
                      "home": str(r["home"]), "away": str(r["away"]),
                      "m_home": _num(r["m_home"]), "m_draw": _num(r["m_draw"]), "m_away": _num(r["m_away"]),
                      "mkt_home": _num(r["mkt_home"]), "mkt_draw": _num(r["mkt_draw"]), "mkt_away": _num(r["mkt_away"]),
+                     "pred": ("" if ("pred" not in r or pd.isna(r["pred"])) else str(r["pred"])),
+                     "xg_home": _num(r["xg_home"]) if "xg_home" in r else None,
+                     "xg_away": _num(r["xg_away"]) if "xg_away" in r else None,
                      "actual": ("" if pd.isna(r["actual"]) else str(r["actual"])),
                      "score": ("" if pd.isna(r["score"]) else str(r["score"])),
                      "played": int(r["played"])})

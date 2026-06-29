@@ -79,8 +79,12 @@ def main():
     for m in sorted(E.GROUP_FIXTURES):
         t1, t2, g = E.GROUP_FIXTURES[m]
         ha = E._ha(t1, t2, HOST_ADV, E.HOSTS)
+        pred, xgh, xga = "", "", ""
         if gm is not None:
             pH, pD, pA = gm.wdl(elo[t1] + ha, elo[t2])
+            pi, pj = gm.most_likely(elo[t1] + ha, elo[t2])
+            la, lb = gm.lambdas(elo[t1] + ha, elo[t2])
+            pred, xgh, xga = f"{pi}-{pj}", round(la, 1), round(lb, 1)
         else:
             la, lb = E.expected_goals(elo[t1], elo[t2], ha=ha)
             pH, pD, pA = poisson_wdl(la, lb)
@@ -94,6 +98,7 @@ def main():
         row = dict(match=m, group=g, home=t1, away=t2,
                    m_home=round(pH*100, 1), m_draw=round(pD*100, 1), m_away=round(pA*100, 1),
                    mkt_home="", mkt_draw="", mkt_away="",
+                   pred=pred, xg_home=xgh, xg_away=xga,
                    actual=actual, score=score, played=int(played))
         if mk:
             row["mkt_home"], row["mkt_draw"], row["mkt_away"] = (round(mk[0]*100, 1), round(mk[1]*100, 1), round(mk[2]*100, 1))

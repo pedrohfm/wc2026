@@ -100,6 +100,12 @@ class GoalsModel:
         s = pH + pD + pA
         return pH / s, pD / s, pA / s
 
+    def most_likely(self, elo_a, elo_b):
+        """Modal exact scoreline (home, away) — the single most probable result."""
+        M = self.grid(elo_a, elo_b)
+        i, j = np.unravel_index(int(np.argmax(M)), M.shape)
+        return int(i), int(j)
+
     # --- persistence ---------------------------------------------------------
     def save(self, path):
         with open(path, "w") as f:
