@@ -477,11 +477,25 @@ class Component extends DCLogic {
   schedOf(no){ return (this.D.sched||{})[String(no)]||null; }
   fmtZone(utc,tz){ try{ return new Date(utc).toLocaleString("en-US",{timeZone:tz,weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); }catch(e){ return null; } }
   koWin(a,b,sc){ const D=this.D; const HOSTS={"Mexico":1,"Canada":1,"United States":1}; let ha=0; if(sc){ if(HOSTS[a]&&sc.country===a) ha+=60; if(HOSTS[b]&&sc.country===b) ha-=60; } const ea=(D.info[a]||{}).Elo||1500, eb=(D.info[b]||{}).Elo||1500; return 1/(1+Math.pow(10,-((ea-eb+ha)/400))); }
+  /* client-side Dixon-Coles: most-likely score, expected goals (xG), 90-min W/D/L
+     for ANY matchup (projected or actual) — same params/host edge as the server. */
+  gmCalc(a,b,sc){ const D=this.D, P=D.gmParams; if(!P||!P.gamma||!a||!b||!D.info[a]||!D.info[b]) return null;
+    const HOSTS={"Mexico":1,"Canada":1,"United States":1}; let ha=0; if(sc){ if(HOSTS[a]&&sc.country===a) ha+=60; if(HOSTS[b]&&sc.country===b) ha-=60; }
+    const d=((D.info[a].Elo||1500)-(D.info[b].Elo||1500))+ha;
+    const clp=x=>Math.min(Math.max(x,P.lo),P.hi);
+    const la=clp(Math.exp(P.mu+P.gamma*d/400)), lb=clp(Math.exp(P.mu-P.gamma*d/400)), K=P.kmax||8, rho=P.rho||0;
+    const lf=n=>{let s=0;for(let i=2;i<=n;i++)s+=Math.log(i);return s;};
+    const pois=l=>{const o=[];for(let k=0;k<=K;k++)o.push(Math.exp(k*Math.log(l)-l-lf(k)));return o;};
+    const pa=pois(la),pb=pois(lb); let sum=0,best=-1,bi=0,bj=0,pH=0,pD=0,pA=0; const M=[];
+    for(let i=0;i<=K;i++){M[i]=[];for(let j=0;j<=K;j++){let t=1; if(i===0&&j===0)t=1-la*lb*rho; else if(i===0&&j===1)t=1+la*rho; else if(i===1&&j===0)t=1+lb*rho; else if(i===1&&j===1)t=1-rho; let p=pa[i]*pb[j]*t; if(p<1e-15)p=1e-15; M[i][j]=p; sum+=p;}}
+    for(let i=0;i<=K;i++)for(let j=0;j<=K;j++){const p=M[i][j]/sum; if(p>best){best=p;bi=i;bj=j;} if(i>j)pH+=p; else if(i===j)pD+=p; else pA+=p;}
+    return {wdl:[pH*100,pD*100,pA*100], pred:bi+"-"+bj, xg:[Math.round(la*10)/10,Math.round(lb*10)/10]}; }
   teamRoad(t){ const D=this.D; if(!t) return []; return (D.gm.rows||[]).filter(r=>(r.home===t||r.away===t)&&r.played&&r.score&&(""+r.score).indexOf("-")>=0).map(r=>{ const home=r.home===t,opp=home?r.away:r.home,oc=r.actual; const win=(oc==="H"&&home)||(oc==="A"&&!home),dr=oc==="D"; return {opp,res:dr?"D":win?"W":"L",score:r.score}; }); }
   buildMatchModal(){ const h=React.createElement; const D=this.D; const m=this.state.matchModal; if(!m) return null; const sc=this.schedOf(m.no);
     const close=()=>this.setState({matchModal:null}); const isKO=m.no>=73;
     const kr=isKO?((D.ko||{})[m.no]||null):null;          // actual knockout result, if any
     const A=(kr&&kr.home)||m.home, B=(kr&&kr.away)||m.away;
+    const gc=(isKO&&A&&B)?this.gmCalc(A,B,sc):null;   // prediction for ANY knockout matchup (projected or actual)
     const BLUE="#2f6fdd",ORANGE="#e8843a",RED="#cf2e2e",GREEN="#1f8a4c",GRAY="#b9b3a4";
     const grp=t=> (t&&D.info[t]&&D.info[t].Grp)? "Group "+D.info[t].Grp : null;
     const SL=txt=>h("div",{style:{font:"700 10.5px Inter",letterSpacing:".1em",textTransform:"uppercase",color:"var(--mut)",margin:"18px 0 7px"}},txt);
@@ -503,7 +517,7 @@ class Component extends DCLogic {
     const hi = (played&&A&&B&&hlScore)? h("a",{href:"https://www.youtube.com/results?search_query="+encodeURIComponent("Highlights "+A+" "+hlScore+" "+B+" FIFA World Cup 2026"),target:"_blank",rel:"noopener noreferrer",style:{display:"inline-flex",alignItems:"center",gap:8,marginTop:18,font:"700 12.5px Inter",textDecoration:"none",color:"#fff",background:"#c4302b",padding:"9px 15px",borderRadius:9}},"▶  Watch FIFA highlights  ↗") : null;
     /* predicted score: modal scoreline + expected goals, with actual alongside once played */
     let predScore,xgPair;
-    if(isKO){ if(kr){ predScore=kr.pred; xgPair=kr.xg; } }
+    if(isKO){ if(gc){ predScore=gc.pred; xgPair=gc.xg; } }
     else { const gr0=(D.gm.rows||[]).find(r=>r.match===m.no); if(gr0){ predScore=gr0.pred; if(gr0.xg_home!=null&&gr0.xg_home!=="") xgPair=[gr0.xg_home,gr0.xg_away]; } }
     const predEl = predScore? h("div",{style:{margin:"10px 0 2px",padding:"9px 12px",borderRadius:9,background:"var(--soft)",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}},
       h("span",{style:{font:"700 9.5px Inter",letterSpacing:".1em",textTransform:"uppercase",color:"var(--mut)"}},"Model prediction"),
@@ -519,7 +533,7 @@ class Component extends DCLogic {
     const sw=(c,t)=>h("span",{style:{display:"inline-flex",alignItems:"center",gap:6}},h("span",{style:{width:10,height:10,borderRadius:3,background:c,flex:"none"}}),t);
     let prob=null;
     if(isKO && A && B){
-      const wdl = kr && kr.wdl;                          // regulation [home win, draw, away win] %
+      const wdl = gc && gc.wdl;                          // regulation [home win, draw, away win] %
       const s = this.koWin(A,B,sc);                       // A's strength share — resolves the draw branch
       const mA = wdl ? (wdl[0]+wdl[1]*s) : s*100, mB = 100-mA;
       const cA=(D.market||{})[A]||0, cB=(D.market||{})[B]||0; const hasM=(cA+cB)>0.02; const kA=hasM?cA/(cA+cB)*100:null;

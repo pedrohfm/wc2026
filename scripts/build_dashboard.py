@@ -284,6 +284,13 @@ def build_data():
                 v = float(df.loc[t, r]) if (t in df.index and r in df.columns) else None
                 series[t][r].append(v)
     gm_data, ko_data = collect_group(), collect_ko()
+    gm_params = {}
+    _pp = os.path.join(ROOT, "params", "goals_params.json")
+    if os.path.exists(_pp):
+        try:
+            gm_params = json.load(open(_pp))
+        except Exception:
+            gm_params = {}
     return {
         "labels": labels, "dates": dates, "rounds": ROUNDS,
         "teams": teams, "info": info, "series": series,
@@ -292,6 +299,7 @@ def build_data():
         "sched": collect_schedule(),
         "ko": ko_data,
         "perf": compute_perf(gm_data, ko_data),
+        "gmParams": gm_params,
         "thirdOverride": THIRD_OVERRIDE_DESIGN,
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
