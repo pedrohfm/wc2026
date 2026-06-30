@@ -615,7 +615,10 @@ class Component extends DCLogic {
     // Rating only breaks exact ties (e.g. minnows both rounding to ~0%).
     const score=t=>t?((this.latest(t,"Win")||0)*1e6+Math.max(0,elo(t))):-1;
     const winCache={};
-    function winner(no){ if(winCache[no]!==undefined) return winCache[no]; const mt=byNo[no]; let oa,ob;
+    function winner(no){ if(winCache[no]!==undefined) return winCache[no];
+      const kr=(D.ko||{})[no];
+      if(kr&&kr.played&&kr.winner){ winCache[no]=kr.winner; return kr.winner; }   // ACTUAL result advances
+      const mt=byNo[no]; let oa,ob;
       if(mt.m<=88){ oa=resolve(mt.a); ob=resolve(mt.b); } else { oa=winner(mt.a); ob=winner(mt.b); }
       let w=null; if(oa&&ob) w=score(oa)>=score(ob)?oa:ob; else w=oa||ob; winCache[no]=w; return w; }
     const occ=no=>{ const mt=byNo[no]; return mt.m<=88?[resolve(mt.a),resolve(mt.b)]:[winner(mt.a),winner(mt.b)]; };
@@ -631,16 +634,18 @@ class Component extends DCLogic {
     for(let c=1;c<cols.length;c++){ cols[c].forEach(mt=>{ const tx=colX(c),ty=center[mt.m]; [mt.a,mt.b].forEach(f=>{ const fx=colX(c-1)+colW,fy=center[f],mx=(fx+tx)/2; lines.push(h("path",{key:"ln"+mt.m+"_"+f,d:"M"+fx+" "+fy+" H"+mx+" V"+ty+" H"+tx,fill:"none",stroke:"var(--line)",strokeWidth:1.5})); }); }); }
     const svg=h("svg",{width:totalW,height:totalH,style:{position:"absolute",left:0,top:0,pointerEvents:"none"}},lines);
     const champ=winner(104);
-    const chip=(t,win,key)=>h("div",{key:key,style:{height:chipH,display:"flex",alignItems:"center",gap:6,padding:"0 7px",borderRadius:5,background:win?"color-mix(in srgb,var(--accent) 12%,var(--paper))":"var(--soft)",border:"1px solid "+(win?"color-mix(in srgb,var(--accent) 40%,var(--line))":"var(--line)"),opacity:t?(win?1:.62):.5,overflow:"hidden"}},
-      t?this.flag(t,13):null, h("span",{style:{font:(win?"700 ":"500 ")+"11.5px Inter",color:"var(--ink)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}, t||"—"));
+    const chip=(t,win,key,badge,decided)=>h("div",{key:key,style:{height:chipH,display:"flex",alignItems:"center",gap:6,padding:"0 7px",borderRadius:5,background:win?"color-mix(in srgb,var(--accent) "+(decided?20:12)+"%,var(--paper))":"var(--soft)",border:"1px solid "+(win?"color-mix(in srgb,var(--accent) "+(decided?70:40)+"%,var(--line))":"var(--line)"),opacity:t?(win?1:(decided?.45:.62)):.5,overflow:"hidden"}},
+      t?this.flag(t,13):null, h("span",{style:{flex:1,minWidth:0,font:(win?"700 ":"500 ")+"11.5px Inter",color:"var(--ink)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textDecoration:(decided&&!win&&t)?"line-through":"none"}}, t||"—"),
+      badge?h("span",{style:{flex:"none",font:"700 9.5px Inter",fontVariantNumeric:"tabular-nums",color:"var(--accent)"}},badge):null);
     const ROUND=["Round of 32","Round of 16","Quarter-finals","Semi-finals","Final"];
     const boxes=[];
     cols.forEach((col,c)=>{ boxes.push(h("div",{key:"hd"+c,style:{position:"absolute",left:colX(c),top:0,width:colW,textAlign:"center",font:"700 9.5px Inter",letterSpacing:".09em",textTransform:"uppercase",color:"var(--mut)"}},ROUND[c]));
-      col.forEach(mt=>{ const oo=occ(mt.m),w=winner(mt.m);
+      col.forEach(mt=>{ const oo=occ(mt.m),w=winner(mt.m); const kr=(D.ko||{})[mt.m]; const dec=!!(kr&&kr.played);
+        const bdg=dec?(kr.hg+"–"+kr.ag+(kr.pkwin?" p":"")):null;
         boxes.push(h("div",{key:"mb"+mt.m,title:"Match details",onClick:()=>this.setState({matchModal:{no:mt.m,home:oo[0],away:oo[1],stage:ROUND[c],played:false,score:""}}),style:{position:"absolute",left:colX(c),top:center[mt.m]-matchH/2,width:colW,height:matchH,display:"flex",flexDirection:"column",gap:chipGap,cursor:"pointer"}},
-          chip(oo[0],oo[0]&&oo[0]===w,"a"),chip(oo[1],oo[1]&&oo[1]===w,"b"))); }); });
+          chip(oo[0],oo[0]&&oo[0]===w,"a",(dec&&oo[0]===w)?bdg:null,dec),chip(oo[1],oo[1]&&oo[1]===w,"b",(dec&&oo[1]===w)?bdg:null,dec))); }); });
     boxes.push(h("div",{key:"champ",style:{position:"absolute",left:colX(4)+colW+30,top:center[104]-34,width:champW,padding:"12px 14px",borderRadius:12,background:"var(--accent)",color:"#fff",boxShadow:"0 16px 32px -16px var(--accent)"}},
-      h("div",{style:{font:"700 9px Inter",letterSpacing:".14em",textTransform:"uppercase",opacity:.85}},"Projected champion"),
+      h("div",{style:{font:"700 9px Inter",letterSpacing:".14em",textTransform:"uppercase",opacity:.85}},((D.ko||{})["104"]&&(D.ko||{})["104"].played)?"Champion":"Projected champion"),
       h("div",{onClick:champ?(()=>this.setState({detail:champ})):null,style:{display:"flex",alignItems:"center",gap:9,marginTop:8,cursor:champ?"pointer":"default"}}, champ?this.flag(champ,22):null, h("span",{style:{fontFamily:"Newsreader",fontWeight:600,fontSize:19,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},champ||"—"))));
     const canvas=h("div",{style:{position:"relative",width:totalW,height:totalH,minWidth:totalW}},svg,boxes);
     const note=h("div",{style:{font:"500 12px Inter",color:"var(--mut)",marginTop:14,textWrap:"pretty"}},"Projected from the official FIFA slot structure: group winners, runners-up and the eight best third-placed teams are projected from current standings plus the model's expected points for matches still to play, then dropped into their official slots, and every match is resolved in favour of the side the model gives the higher championship probability (rating breaks exact ties) — so the projected champion is the same team the forecast names as favourite. The bracket firms up as group results land — click any team for its dossier.");

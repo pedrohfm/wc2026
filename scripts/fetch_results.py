@@ -251,23 +251,35 @@ def run(dry=False, overwrite=False):
             gh, ga, pk = parsed
             uh, ua = (oh, oa) if direct else (oa, oh)     # our home/away orientation
             cur_h, cur_a = ws.cell(row, cols["hg"]).value, ws.cell(row, cols["ag"]).value
-            filled = cur_h not in (None, "") or cur_a not in (None, "")
-            if filled:
-                try:
-                    same = int(float(cur_h)) == gh and int(float(cur_a)) == ga
-                except (TypeError, ValueError):
-                    same = False
-                if same or not overwrite:
-                    continue                      # matches, or protect manual entry
-                tag = f"~ M{m}: {uh} {cur_h}-{cur_a} {ua}  ->  {gh}-{ga}"
+            cur_pk = ws.cell(row, cols["pk"]).value if cols["pk"] else None
+            score_blank = cur_h in (None, "") and cur_a in (None, "")
+            try:
+                score_same = (not score_blank) and int(float(cur_h)) == gh and int(float(cur_a)) == ga
+            except (TypeError, ValueError):
+                score_same = False
+            pk_blank = str(cur_pk or "").strip() == ""
+            # decide what to write:
+            #  blank score        -> add the result (+ PK)
+            #  same score, no PK  -> complete a missing penalty winner (e.g. shootout)
+            #  different score    -> only with --overwrite (protect manual entries)
+            if score_blank:
+                write_score, write_pk = True, bool(pk)
+            elif score_same:
+                write_score, write_pk = False, bool(pk) and bool(cols["pk"]) and (pk_blank or overwrite)
+            elif overwrite:
+                write_score, write_pk = True, bool(pk)
             else:
-                tag = f"+ M{m}: {uh} {gh}-{ga} {ua}"
-            print(f"    {tag}" + (f" (PK {pk})" if pk else ""))
+                continue
+            if not write_score and not write_pk:
+                continue
+            bits = (["%d-%d" % (gh, ga)] if write_score else []) + (["PK " + pk] if write_pk else [])
+            print(("    ~ " if not score_blank else "    + ") + f"M{m}: {uh} v {ua}  " + " ".join(bits))
             if not dry:
-                ws.cell(row, cols["hg"]).value = gh
-                ws.cell(row, cols["ag"]).value = ga
-                if cols["pk"]:
-                    ws.cell(row, cols["pk"]).value = pk if pk else None
+                if write_score:
+                    ws.cell(row, cols["hg"]).value = gh
+                    ws.cell(row, cols["ag"]).value = ga
+                if write_pk:
+                    ws.cell(row, cols["pk"]).value = pk
             wrote += 1
         total += wrote
         if wrote and not dry:
