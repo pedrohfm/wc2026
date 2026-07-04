@@ -45,16 +45,14 @@ def _write_fixed(src, dest):
 
 
 def deploy_new_design():
-    # Cache-bust WCData.js with a content hash so a new deploy always loads the
-    # fresh data (browsers/GitHub-Pages CDN otherwise serve a stale cached copy),
-    # while an unchanged file still caches. Same for the design runtime support.js.
+    # WCData.js is loaded by index.html with a runtime timestamp (?t=Date.now()),
+    # so every page load / F5 fetches fresh data even from a cached HTML shell.
+    # support.js (the design runtime) changes rarely -> content-hash cache-bust.
     import hashlib
-    wver = hashlib.md5(open(WCDATA_SRC, "rb").read()).hexdigest()[:10]
     sver = hashlib.md5(open(SUPPORT_SRC, "rb").read()).hexdigest()[:10]
     html = open(TRACKER_SRC, encoding="utf-8").read()
     for a, b in LINK_FIXES.items():
         html = html.replace(a, b)
-    html = html.replace('src="WCData.js"', 'src="WCData.js?v=%s"' % wver)
     html = html.replace('src="./support.js"', 'src="./support.js?v=%s"' % sver)
     html = html.replace('src="support.js"', 'src="support.js?v=%s"' % sver)
     with open(os.path.join(SITE, "index.html"), "w", encoding="utf-8") as f:
