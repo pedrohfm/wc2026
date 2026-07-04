@@ -128,6 +128,16 @@ def collect_schedule():
             "date": str(r["date"]), "et": str(r["et"]), "utc": str(r["utc"]),
             "venue": str(r["venue"]), "city": str(r["city"]),
             "state": str(r["state"]), "country": str(r["country"])}
+    # overlay authoritative live kick-off times fetched from the API (the static
+    # file's knockout time-slots were an assumption; the API's utcDate is real)
+    live_path = os.path.join(OUT, "schedule_live.json")
+    if os.path.exists(live_path):
+        try:
+            for k, utc in json.load(open(live_path)).items():
+                if k in out and utc:
+                    out[k]["utc"] = str(utc)
+        except Exception:
+            pass
     return out
 
 

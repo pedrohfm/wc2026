@@ -42,6 +42,7 @@ from wc2026.elo_dynamics import _deterministic_groups
 XLSX = os.path.join(ROOT, "wc2026_results.xlsx")
 ELO_CSV = os.path.join(ROOT, "wc2026_elo.csv")
 KO_PENS = os.path.join(ROOT, "outputs", "ko_penalties.json")
+SCHED_LIVE = os.path.join(ROOT, "outputs", "schedule_live.json")
 BASE = "https://api.football-data.org/v4"
 COMP = "WC"
 
@@ -178,12 +179,39 @@ def api_get(path):
         raise RuntimeError(f"HTTP {ex.code} from football-data: {ex.reason}")
 
 
-def fetch_finished():
+def fetch_matches():
+    """All WC matches (any status) — so we get finished results AND the current
+       kick-off time (utcDate) for scheduled ones."""
     season = os.environ.get("FOOTBALL_DATA_SEASON", "").strip()
-    path = f"/competitions/{COMP}/matches?status=FINISHED" + (f"&season={season}" if season else "")
+    path = f"/competitions/{COMP}/matches" + (f"?season={season}" if season else "")
     data, headers = api_get(path)
     rem = headers.get("X-Requests-Available") or headers.get("X-RequestsAvailable")
     return data.get("matches", []), rem
+
+
+def write_live_times(all_matches, dry=False):
+    """Map every match with resolved teams to our match number and record the
+       API's authoritative kick-off instant (utcDate) into outputs/schedule_live.json.
+       build_dashboard overlays these over the static schedule so times are always
+       correct (the static file's knockout time-slots were an assumption)."""
+    fx, _kg, _kk = resolved_fixtures()
+    times = {}
+    for am in all_matches:
+        hn = (am.get("homeTeam") or {}).get("name")
+        an = (am.get("awayTeam") or {}).get("name")
+        oh, oa = to_ours(hn or ""), to_ours(an or "")
+        utc = am.get("utcDate")
+        if not oh or not oa or not utc:
+            continue
+        no = fx.get((oh, oa)) or fx.get((oa, oh))
+        if no:
+            times[str(no)] = utc
+    if times:
+        print(f"  kick-off times refreshed for {len(times)} matches")
+        if not dry:
+            os.makedirs(os.path.dirname(SCHED_LIVE), exist_ok=True)
+            json.dump(times, open(SCHED_LIVE, "w"))
+    return times
 
 
 def _open_sheet():
@@ -215,11 +243,13 @@ def _open_sheet():
 
 
 def run(dry=False, overwrite=False):
-    matches, rem = fetch_finished()
-    print(f"  football-data: {len(matches)} finished WC match(es) returned"
+    all_matches, rem = fetch_matches()
+    matches = [m for m in all_matches if m.get("status") == "FINISHED"]
+    print(f"  football-data: {len(all_matches)} WC matches ({len(matches)} finished)"
           + (f"  ({rem} API requests left this minute)" if rem else ""))
+    write_live_times(all_matches, dry)           # always refresh kick-off times
     if not matches:
-        print("  Nothing finished yet — nothing to write.")
+        print("  No finished matches to score yet.")
         return
     wb, ws, cols, row_of = _open_sheet()
     filled, unmatched, total, pens_map = 0, set(), 0, {}
