@@ -369,10 +369,21 @@ def _selftest():
 def main():
     if "--selftest" in sys.argv:
         sys.exit(0 if _selftest() else 1)
+    tok = os.environ.get("FOOTBALL_DATA_TOKEN", "").strip()
+    if tok in ("", "YOUR_TOKEN", "your_token", "your_token_here"):
+        print("  " + "!" * 66)
+        print("  !! RESULTS NOT FETCHED — FOOTBALL_DATA_TOKEN is missing or a placeholder.")
+        print("  !! Scores will NOT auto-update. Set your real token, e.g.:")
+        print("  !!   export FOOTBALL_DATA_TOKEN=your_real_key   (get one free at football-data.org)")
+        print("  " + "!" * 66)
+        sys.exit(1)
     try:
         run(dry="--dry-run" in sys.argv, overwrite="--overwrite" in sys.argv)
     except (RuntimeError, PermissionError, OSError) as ex:
-        print(f"  [skip] {ex}")
+        print("  " + "!" * 66)
+        print(f"  !! RESULTS FETCH FAILED — scores did NOT update: {ex}")
+        print("  " + "!" * 66)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

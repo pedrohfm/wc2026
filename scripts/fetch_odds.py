@@ -161,8 +161,15 @@ def main():
         append_match_odds(parse_h2h(events))
         print("  (mock outrights)"); print(parse_outrights(events))
         return 0
-    if not args.key:
-        print("No API key. Set ODDS_API_KEY or pass --key (free key: https://the-odds-api.com)."); return 1
+    key = (args.key or "").strip()
+    if key in ("", "xxxxx", "YOUR_KEY", "your_key", "your_key_here", "YOUR_TOKEN", "your_real_key"):
+        print("  " + "!" * 66)
+        print("  !! ODDS NOT FETCHED — ODDS_API_KEY is missing or a placeholder.")
+        print("  !! Market odds will NOT update. Set your real key, e.g.:")
+        print("  !!   export ODDS_API_KEY=your_real_key   (get one free at the-odds-api.com)")
+        print("  " + "!" * 66)
+        return 1
+    args.key = key
     if args.list_sports:
         for s in _get(f"{API}/sports/?apiKey={args.key}"):
             if "soccer" in s["key"]:
