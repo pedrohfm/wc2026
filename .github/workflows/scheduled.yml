@@ -1,0 +1,89 @@
+name: Auto-update (scheduled)
+
+# Runs the whole pipeline in the cloud on a timer — fetch results + odds, run the
+# model, build the dashboard, and deploy to GitHub Pages — so nothing needs your
+# laptop. API keys come from encrypted repo Secrets (never the code).
+#
+# HARD STOP: after the World Cup this does nothing (see STOP_AFTER below). To end
+# it completely, disable/delete this workflow in the Actions tab once the WC is over.
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"      # every 4 hours (UTC)
+  workflow_dispatch: {}         # lets you trigger a run manually any time
+
+permissions:
+  contents: write               # to commit refreshed snapshots back
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false     # never cancel an in-flight Pages deploy
+
+env:
+  STOP_AFTER: "2026-07-21"      # last active date. WC final is ~Jul 20; this runs
+                                # one extra day to capture the final's result, then
+                                # every run after Jul 21 is a no-op.
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Stop after the World Cup
+        id: guard
+        run: |
+          today=$(date -u +%F)
+          if [[ "$today" > "$STOP_AFTER" ]]; then
+            echo "::notice::World Cup over ($today is past $STOP_AFTER) — skipping."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.go == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.go == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.guard.outputs.go == 'true'
+        run: pip install -r requirements.txt
+
+      - name: Fetch results & odds, forecast, build dashboard
+        if: steps.guard.outputs.go == 'true'
+        env:
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          python scripts/fetch_odds.py     || echo "  (odds skipped)"
+          python scripts/fetch_results.py  || echo "  (results skipped)"
+          python scripts/fill_ko_labels.py || true
+          python scripts/build_and_forecast.py
+          python scripts/publish.py         # builds site/ (no git push here)
+
+      - name: Persist daily snapshots (progression chart history)
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          git config user.name  "wc2026-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add outputs/forecast_*.csv outputs/group_matches_*.csv wc2026_results.xlsx 2>/dev/null || true
+          git commit -m "Auto snapshot $(date -u +'%F %H:%MZ')" || echo "  (nothing to commit)"
+          git push || echo "  (push skipped — likely no changes or a fast-forward conflict)"
+
+      - uses: actions/configure-pages@v5
+        if: steps.guard.outputs.go == 'true'
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.guard.outputs.go == 'true'
+        with:
+          path: site
+      - id: deployment
+        if: steps.guard.outputs.go == 'true'
+        uses: actions/deploy-pages@v4
