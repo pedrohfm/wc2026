@@ -9,7 +9,7 @@ name: Auto-update (scheduled)
 
 on:
   schedule:
-    - cron: "0 */4 * * *"      # every 4 hours (UTC)
+    - cron: "0 */2 * * *"      # every 2 hours (UTC)
   workflow_dispatch: {}         # lets you trigger a run manually any time
 
 permissions:
