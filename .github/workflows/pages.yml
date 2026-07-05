@@ -15,9 +15,11 @@ permissions:
   pages: write
   id-token: write
 
+# Don't cancel an in-progress deployment — cancelling a Pages deploy mid-flight
+# is a common cause of "Deployment failed, try again later". Let each finish.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
