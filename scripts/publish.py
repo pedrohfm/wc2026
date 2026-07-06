@@ -69,6 +69,33 @@ def deploy_new_design():
     print("  deployed NEW design -> site/index.html, methodology.html, support.js, WCData.js")
 
 
+# Vercel serves site/ as the project root (Root Directory = site). Pinning the
+# config inside the folder means the Vercel dashboard settings can't drift out of
+# sync (outputDirectory "." = this folder itself). Regenerated every build.
+VERCEL_JSON = '''{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/WCData.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
+'''
+
+
+def write_vercel_config():
+    with open(os.path.join(SITE, "vercel.json"), "w", encoding="utf-8") as f:
+        f.write(VERCEL_JSON)
+
+
 def deploy_legacy():
     shutil.copy(os.path.join(OUT, "dashboard.html"), os.path.join(SITE, "index.html"))
     shutil.copy(os.path.join(OUT, "about.html"), os.path.join(SITE, "about.html"))
@@ -87,6 +114,7 @@ def main():
     else:
         deploy_legacy()
     open(os.path.join(SITE, ".nojekyll"), "w").close()   # serve as-is on GitHub Pages
+    write_vercel_config()                                # pin Vercel static config
     print(f"  site ready -> {os.path.relpath(SITE, ROOT)}/")
 
     # 3. optional git deploy
