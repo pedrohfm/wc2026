@@ -82,16 +82,22 @@ jobs:
         run: |
           git config user.name  "wc2026-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add outputs/forecast_*.csv outputs/group_matches_*.csv wc2026_results.xlsx 2>/dev/null || true
+          git add site outputs/forecast_*.csv outputs/group_matches_*.csv wc2026_results.xlsx 2>/dev/null || true
           git commit -m "Auto snapshot $(date -u +'%F %H:%MZ')" || echo "  (nothing to commit)"
           git push || echo "  (push skipped — likely no changes or a fast-forward conflict)"
 
+      # --- GitHub Pages: now a silent fallback. Vercel is the primary deploy and
+      #     redeploys automatically on the push above. These steps can no longer
+      #     fail the run (continue-on-error), so Pages flakiness is just noise.
       - uses: actions/configure-pages@v5
         if: steps.guard.outputs.go == 'true'
+        continue-on-error: true
       - uses: actions/upload-pages-artifact@v3
         if: steps.guard.outputs.go == 'true'
+        continue-on-error: true
         with:
           path: site
       - id: deployment
         if: steps.guard.outputs.go == 'true'
+        continue-on-error: true
         uses: actions/deploy-pages@v4
