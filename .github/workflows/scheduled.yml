@@ -11,6 +11,14 @@ on:
   schedule:
     - cron: "0 */2 * * *"      # every 2 hours (UTC)
   workflow_dispatch: {}         # lets you trigger a run manually any time
+  push:                         # local pushes deploy through THIS single workflow
+    branches: [main]            # (bot snapshot commits use GITHUB_TOKEN, which does
+    paths:                      #  NOT re-trigger workflows — so no infinite loop)
+      - "site/**"
+      - "wc2026_results.xlsx"
+      - "data/**"
+      - "scripts/**"
+      - "src/**"
 
 permissions:
   contents: write               # to commit refreshed snapshots back
