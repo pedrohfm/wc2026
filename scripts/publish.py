@@ -40,6 +40,7 @@ def _write_fixed(src, dest):
     html = open(src, encoding="utf-8").read()
     for a, b in LINK_FIXES.items():
         html = html.replace(a, b)
+    html = inject_pwa(html)
     with open(dest, "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -55,6 +56,7 @@ def deploy_new_design():
         html = html.replace(a, b)
     html = html.replace('src="./support.js"', 'src="./support.js?v=%s"' % sver)
     html = html.replace('src="support.js"', 'src="support.js?v=%s"' % sver)
+    html = inject_pwa(html)
     with open(os.path.join(SITE, "index.html"), "w", encoding="utf-8") as f:
         f.write(html)
     _write_fixed(METHOD_SRC, os.path.join(SITE, "methodology.html"))
@@ -96,6 +98,59 @@ def write_vercel_config():
         f.write(VERCEL_JSON)
 
 
+# --- installable web-app (Add to Home Screen) --------------------------------
+# Head tags injected into every page so iOS/Android treat the site as an app:
+# custom icon, full-screen standalone launch, name, and theme colour.
+PWA_HEAD = (
+    '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">'
+    '<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">'
+    '<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">'
+    '<link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">'
+    '<link rel="manifest" href="/manifest.webmanifest">'
+    '<meta name="apple-mobile-web-app-capable" content="yes">'
+    '<meta name="mobile-web-app-capable" content="yes">'
+    '<meta name="apple-mobile-web-app-status-bar-style" content="default">'
+    '<meta name="apple-mobile-web-app-title" content="WC2026">'
+    '<meta name="theme-color" content="#1a1a1f">'
+)
+
+MANIFEST = '''{
+  "name": "WC2026 Forecast Tracker",
+  "short_name": "WC2026",
+  "description": "FIFA World Cup 2026 Monte-Carlo forecast tracker",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f1ea",
+  "theme_color": "#1a1a1f",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+'''
+
+
+def inject_pwa(html):
+    """Insert the installable-app head tags right before </head> (once)."""
+    return html.replace("</head>", PWA_HEAD + "</head>", 1)
+
+
+def write_pwa_assets():
+    """Copy the committed app icons into site/icons/ and write the manifest."""
+    icons_dir = os.path.join(SITE, "icons")
+    os.makedirs(icons_dir, exist_ok=True)
+    src = os.path.join(ROOT, "assets", "pwa")
+    if os.path.isdir(src):
+        for fn in os.listdir(src):
+            if fn.endswith(".png"):
+                shutil.copy(os.path.join(src, fn), os.path.join(icons_dir, fn))
+    with open(os.path.join(SITE, "manifest.webmanifest"), "w", encoding="utf-8") as f:
+        f.write(MANIFEST)
+
+
 def deploy_legacy():
     shutil.copy(os.path.join(OUT, "dashboard.html"), os.path.join(SITE, "index.html"))
     shutil.copy(os.path.join(OUT, "about.html"), os.path.join(SITE, "about.html"))
@@ -115,6 +170,7 @@ def main():
         deploy_legacy()
     open(os.path.join(SITE, ".nojekyll"), "w").close()   # serve as-is on GitHub Pages
     write_vercel_config()                                # pin Vercel static config
+    write_pwa_assets()                                   # app icons + manifest
     print(f"  site ready -> {os.path.relpath(SITE, ROOT)}/")
 
     # 3. optional git deploy
