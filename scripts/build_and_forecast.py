@@ -42,6 +42,43 @@ PARAMS    = os.path.join(ROOT, "params", "goals_params.json")
 ODDS_CHAMP = os.path.join(ROOT, "data", "odds_champion.csv")
 OUT_DIR   = os.path.join(ROOT, "outputs")
 
+# Append-only progression history. Each meaningful run adds a timestamped block;
+# nothing is ever overwritten, so the chart accumulates real movement no matter
+# how often the model runs (locally or in the cloud).
+HIST_ROUNDS = ["R32", "R16", "QF", "SF", "Final", "Win"]
+HIST_PATH = os.path.join(OUT_DIR, "history.csv")
+
+
+def append_history(probs, path=HIST_PATH, move_threshold=0.05):
+    """Append the current forecast to outputs/history.csv as one timestamped
+    block — but only when it actually moved. A rerun on the same day whose
+    champion probabilities are unchanged (every team's Win% within
+    `move_threshold`) is skipped, so identical reruns never replace or duplicate
+    a point. A new calendar day always records a point."""
+    ts = dt.datetime.now().strftime("%Y-%m-%dT%H:%M")
+    cur = probs.reset_index()
+    cur = cur.rename(columns={cur.columns[0]: "team"})
+    cols = ["team"] + [c for c in HIST_ROUNDS + ["Elo", "Conf", "Grp"] if c in cur.columns]
+    cur = cur[cols].copy()
+    cur.insert(0, "ts", ts)
+    if os.path.exists(path):
+        hist = pd.read_csv(path)
+        if len(hist):
+            last_ts = hist["ts"].iloc[-1]
+            last = hist[hist["ts"] == last_ts]
+            same_day = str(last_ts)[:10] == ts[:10]
+            lw = dict(zip(last["team"].astype(str), last["Win"].astype(float)))
+            moved = max((abs(float(r["Win"]) - lw.get(str(r["team"]), -999.0))
+                         for _, r in cur.iterrows()), default=99.0)
+            if same_day and moved < move_threshold:
+                print(f"  [history unchanged (max Win move {moved:.3f}pp) -> not appended]")
+                return
+        out = pd.concat([hist, cur], ignore_index=True)
+    else:
+        out = cur
+    out.to_csv(path, index=False)
+    print(f"  [history -> {os.path.relpath(path, ROOT)}  ({out['ts'].nunique()} points)]")
+
 
 def banner(title):
     print("\n" + "=" * 74 + f"\n{title}\n" + "=" * 74)
@@ -206,6 +243,7 @@ def main():
     out_csv = os.path.join(OUT_DIR, f"forecast_{stamp}.csv")
     probs.to_csv(out_csv)
     print(f"\n  [saved forecast -> {os.path.relpath(out_csv, ROOT)}]")
+    append_history(probs)   # append-only progression record (never overwritten)
 
     banner("STEP 6  Sigma sensitivity (how load-bearing is rating uncertainty?)")
     sigma_sensitivity(elo, model, iters, args.host_adv)

@@ -167,7 +167,7 @@ class Component extends DCLogic {
   constructor(p){
     super(p);
     this.rootRef=React.createRef();
-    this.state={metric:"Win",mode:"prob",topN:8,sort:"Win",dir:1,hi:null,search:"",gmGroup:"ALL",
+    this.state={metric:"Win",mode:"prob",topN:8,yfit:"fit",sort:"Win",dir:1,hi:null,search:"",gmGroup:"ALL",
       theme:"signal",ready:false,introT:0,chartT:0,tip:null,detail:null,matchModal:null};
   }
   get D(){ return window.WC_DATA; }
@@ -250,14 +250,37 @@ class Component extends DCLogic {
   buildChart(){ const h=React.createElement; const D=this.D, L=D.labels, N=L.length, S=this.state;
     const W=1000,H=440,padL=42,padR=130,padT=22,padB=36,iw=W-padL-padR,ih=H-padT-padB;
     const teams=this.top(), col=this.colorFor(teams);
-    const X=i=>padL+(N===1?iw/2:iw*i/(N-1)); let Y,ticks,maxv=0;
-    if(S.mode==="prob"){ teams.forEach(t=>D.series[t][S.metric].forEach(v=>{if(v>maxv)maxv=v;})); maxv=Math.max(5,Math.ceil(maxv/10)*10); Y=v=>padT+ih-ih*(v/maxv); ticks=[]; const stp=maxv<=20?5:(maxv<=50?10:20); for(let g=0;g<=maxv;g+=stp)ticks.push(g); }
+    const X=i=>padL+(N===1?iw/2:iw*i/(N-1)); let Y,ticks;
+    if(S.mode==="prob"){
+      // dynamic y-axis: fit to the displayed teams' min..max (padded) so tightly
+      // packed lines spread out, instead of always anchoring at 0. "Full" pins 0.
+      let mn=Infinity,mx=-Infinity;
+      teams.forEach(t=>D.series[t][S.metric].forEach(v=>{if(v==null)return; if(v>mx)mx=v; if(v<mn)mn=v;}));
+      if(!isFinite(mn)){mn=0;mx=5;}
+      const niceStep=span=>{ const raw=span/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/mag;
+        return Math.max(1,(n<1.5?1:n<3?2:n<7?5:10)*mag); };
+      let lo,hi;
+      if(S.yfit==="fit"){
+        // zoom to the displayed data with a little padding; keep exact bounds
+        // (no coarse rounding) so tight bands genuinely spread across the height
+        const rng=Math.max(mx-mn,1),pad=Math.max(rng*0.08,0.5);
+        lo=Math.max(0,mn-pad); hi=Math.min(100,mx+pad);
+        if(hi-lo<1){ lo=Math.max(0,mn-1); hi=Math.min(100,mx+1); }
+      } else { lo=0; hi=Math.max(5,Math.ceil(mx/10)*10); }
+      const step=niceStep(hi-lo);
+      Y=v=>padT+ih-ih*((v-lo)/(hi-lo));
+      ticks=[]; for(let g=Math.ceil(lo/step)*step; g<=hi+1e-9; g+=step) ticks.push(Math.round(g));
+    }
     else { const ny=Math.min(S.topN,teams.length); Y=rk=>padT+ih*((rk-1)/Math.max(1,ny-1)); }
     const rankAt=(t,i)=>{ const arr=teams.map(tt=>[tt,D.series[tt][S.metric][i]??-1]).sort((a,b)=>b[1]-a[1]); return arr.findIndex(e=>e[0]===t)+1; };
     const els=[]; let K=0;
     if(ticks){ ticks.forEach(g=>{ const yy=Y(g); els.push(h("line",{key:"g"+K++,x1:padL,y1:yy,x2:W-padR,y2:yy,stroke:"var(--line)",strokeWidth:1})); els.push(h("text",{key:"g"+K++,x:padL-9,y:yy+4,fill:"var(--mut)",fontSize:12,textAnchor:"end",fontFamily:"Inter"},g+"%")); }); }
     else { for(let rk=1;rk<=Math.min(S.topN,teams.length);rk++){ const yy=Y(rk); els.push(h("line",{key:"g"+K++,x1:padL,y1:yy,x2:W-padR,y2:yy,stroke:"var(--line)"})); els.push(h("text",{key:"g"+K++,x:padL-9,y:yy+4,fill:"var(--mut)",fontSize:12,textAnchor:"end",fontFamily:"Inter"},"#"+rk)); } }
-    L.forEach((lb,i)=>els.push(h("text",{key:"x"+i,x:X(i),y:H-12,fill:"var(--mut)",fontSize:11.5,textAnchor:"middle",fontFamily:"Inter"},lb)));
+    // thin x-axis labels to ~9 evenly spaced (plus first/last) so dense
+    // intraday points don't overprint each other; skip repeated day labels
+    const stepL=Math.max(1,Math.ceil(N/9)); let lastLab=null;
+    L.forEach((lb,i)=>{ const edge=(i===0||i===N-1); if(!edge&&i%stepL!==0)return; if(lb===lastLab&&!edge)return; lastLab=lb;
+      els.push(h("text",{key:"x"+i,x:X(i),y:H-12,fill:"var(--mut)",fontSize:11.5,textAnchor:"middle",fontFamily:"Inter"},lb)); });
     teams.forEach(t=>{ const dim=S.hi&&S.hi!==t;
       const pts=L.map((_,i)=>S.mode==="prob"?[X(i),Y(D.series[t][S.metric][i]??0)]:[X(i),Y(rankAt(t,i))]);
       let len=0; for(let i=1;i<pts.length;i++)len+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
@@ -272,6 +295,7 @@ class Component extends DCLogic {
       h("span",{style:{font:"700 11px Inter",letterSpacing:".06em",textTransform:"uppercase",color:"var(--mut)",marginRight:2}},"Stage"),
       this.seg(D.rounds.map(r=>({v:r,l:r})),S.metric,v=>{this.setState({metric:v});this.animate("chartT",550);}),
       this.seg([{v:"prob",l:"Probability"},{v:"rank",l:"Rank"}],S.mode,v=>{this.setState({mode:v});this.animate("chartT",550);}),
+      S.mode==="prob"?this.seg([{v:"fit",l:"Fit"},{v:"full",l:"Full"}],S.yfit,v=>{this.setState({yfit:v});this.animate("chartT",450);}):null,
       h("span",{style:{flex:1}}),
       h("span",{style:{font:"600 12px Inter",color:"var(--mut)"}},"Show"),
       this.seg([{v:8,l:"Top 8"},{v:16,l:"Top 16"},{v:32,l:"Top 32"}],S.topN,v=>{this.setState({topN:v});this.animate("chartT",550);}));

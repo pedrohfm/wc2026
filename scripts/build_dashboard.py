@@ -203,11 +203,25 @@ def _load(path):
 
 
 def collect():
-    snaps = []  # list of {date, label, teams:{team:{...}}}
-    # ex-ante baseline first
+    """Assemble the progression time series. PRIMARY source is the append-only
+    outputs/history.csv (one block per timestamped run — never overwritten, so
+    reruns accumulate). Falls back to the dated forecast_*.csv files if history
+    is absent (first run / older checkouts). Ex-ante baseline is always first."""
+    snaps = []  # list of (date, label, DataFrame[index=team])
     ex = os.path.join(OUT, "forecast_exante.csv")
     if os.path.exists(ex):
         snaps.append(("0000-00-00", "Ex-ante", _load(ex)))
+
+    hist = os.path.join(OUT, "history.csv")
+    if os.path.exists(hist):
+        df = pd.read_csv(hist)
+        df["team"] = df["team"].astype(str)
+        for ts, g in df.groupby("ts", sort=True):   # ISO ts sorts chronologically
+            block = g.drop(columns=["ts"]).set_index("team")
+            snaps.append((str(ts)[:10], str(ts)[5:10], block))   # label MM-DD
+        return snaps
+
+    # fallback: legacy dated snapshots
     for p in sorted(glob.glob(os.path.join(OUT, "forecast_*.csv"))):
         m = re.search(r"forecast_(\d{4}-\d{2}-\d{2})\.csv$", os.path.basename(p))
         if not m:
